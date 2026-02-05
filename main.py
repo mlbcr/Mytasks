@@ -185,6 +185,7 @@ class MissionCard(QtWidgets.QFrame):
                 background-color: rgba(255,255,255,0.1);
             }
         """)
+        self.is_done = False
         self.btn_status.clicked.connect(self.toggle_status)
 
         text_layout = QtWidgets.QVBoxLayout()
@@ -208,14 +209,28 @@ class MissionCard(QtWidgets.QFrame):
         layout.addWidget(xp_label)
     
     def toggle_status(self):
-        self.btn_status.setStyleSheet("""
-            QPushButton {
-                background-color: black;      /* cor do miolo */
-                border: 2px solid white;      /* borda branca */
-                border-radius: 9px;
-                padding: 2px;                 /* cria o “vazio” visual */
-            }
-        """)
+        self.is_done = not self.is_done
+
+        if self.is_done:
+            self.btn_status.setStyleSheet("""
+                QPushButton {
+                    background-color: black;
+                    border: 2px solid white;
+                    border-radius: 9px;
+                    padding: 2px;
+                }
+            """)
+        else:
+            self.btn_status.setStyleSheet("""
+                QPushButton {
+                    background-color: white;
+                    border: 2px solid white;
+                    border-radius: 9px;
+                }
+                QPushButton:hover {
+                    background-color: rgba(255,255,255,0.1);
+                }                          
+            """)
 
 class AppScreen(QtWidgets.QWidget):
     def __init__(self):
