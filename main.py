@@ -171,12 +171,21 @@ class MissionCard(QtWidgets.QFrame):
         layout.setContentsMargins(16, 10, 16, 10)
         layout.setSpacing(12)
 
-        status = QtWidgets.QLabel()
-        status.setFixedSize(18, 18)
-        status.setStyleSheet("""
-            background-color: white;
-            border-radius: 9px;
+        self.btn_status = QtWidgets.QPushButton()
+        self.btn_status.setFixedSize(18, 18)
+        self.btn_status.setCursor(QtCore.Qt.PointingHandCursor)
+
+        self.btn_status.setStyleSheet("""
+            QPushButton {
+                background-color: white;
+                border: 2px solid white;
+                border-radius: 9px;
+            }
+            QPushButton:hover {
+                background-color: rgba(255,255,255,0.1);
+            }
         """)
+        self.btn_status.clicked.connect(self.toggle_status)
 
         text_layout = QtWidgets.QVBoxLayout()
         text_layout.setSpacing(2)
@@ -193,11 +202,20 @@ class MissionCard(QtWidgets.QFrame):
         xp_label = QtWidgets.QLabel(f"{xp} xp")
         xp_label.setStyleSheet("color: white; font-weight: bold;")
 
-        layout.addWidget(status)
+        layout.addWidget(self.btn_status)
         layout.addLayout(text_layout)
         layout.addStretch()
         layout.addWidget(xp_label)
     
+    def toggle_status(self):
+        self.btn_status.setStyleSheet("""
+            QPushButton {
+                background-color: black;      /* cor do miolo */
+                border: 2px solid white;      /* borda branca */
+                border-radius: 9px;
+                padding: 2px;                 /* cria o “vazio” visual */
+            }
+        """)
 
 class AppScreen(QtWidgets.QWidget):
     def __init__(self):
