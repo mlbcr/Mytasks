@@ -155,6 +155,49 @@ class NameScreen(QtWidgets.QWidget):
         self.main.resize(self.main.normal_size)
         self.main.center_on_screen()
 
+class MissionCard(QtWidgets.QFrame):
+    def __init__(self, titulo, xp=2, cor="#2b0b3f"):
+        super().__init__()
+
+        self.setFixedHeight(70)
+        self.setStyleSheet(f"""
+            QFrame {{
+                background-color: {cor};
+                border-radius: 14px;
+            }}               
+        """ )
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(16, 10, 16, 10)
+        layout.setSpacing(12)
+
+        status = QtWidgets.QLabel()
+        status.setFixedSize(18, 18)
+        status.setStyleSheet("""
+            background-color: white;
+            border-radius: 9px;
+        """)
+
+        text_layout = QtWidgets.QVBoxLayout()
+        text_layout.setSpacing(2)
+
+        title = QtWidgets.QLabel(titulo)
+        title.setStyleSheet("color: white; font-weight: bold;")
+
+        desc = QtWidgets.QLabel("Adicionar descrição")
+        desc.setStyleSheet("color: rgba(255,255,255,0.6); font-size: 11px;")
+
+        text_layout.addWidget(title)
+        text_layout.addWidget(desc)
+
+        xp_label = QtWidgets.QLabel(f"{xp} xp")
+        xp_label.setStyleSheet("color: white; font-weight: bold;")
+
+        layout.addWidget(status)
+        layout.addLayout(text_layout)
+        layout.addStretch()
+        layout.addWidget(xp_label)
+    
 
 class AppScreen(QtWidgets.QWidget):
     def __init__(self):
@@ -171,7 +214,7 @@ class AppScreen(QtWidgets.QWidget):
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
 
         self.btn_add_mission = QtWidgets.QPushButton("+")
-        self.btn_add_mission.setFixedSize(36, 36)
+        self.btn_add_mission.setFixedSize(80, 60)
         self.btn_add_mission.clicked.connect(self.create_mission)
         self.mission_title_input = QtWidgets.QLineEdit()
         self.mission_title_input.setPlaceholderText("Digite o nome da missão e pressione Enter")
@@ -183,8 +226,10 @@ class AppScreen(QtWidgets.QWidget):
             QPushButton {
                 color: white;
                 border: 1px solid white;
-                border-radius: 15px;
+                border-radius: 20px;
                 padding: 6px 20px;
+                font-size: 24px; 
+                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: rgba(255, 255, 255, 0.1);
@@ -205,6 +250,7 @@ class AppScreen(QtWidgets.QWidget):
             }
         """)
 
+
         header.addWidget(title)
         header.addStretch()
         header.addWidget(self.btn_add_mission)
@@ -215,8 +261,14 @@ class AppScreen(QtWidgets.QWidget):
         self.missions_container = QtWidgets.QVBoxLayout()
         self.missions_container.setSpacing(12)
 
+        self.load_missions()
+
         layout.addLayout(self.missions_container)
         layout.addStretch()
+
+    def add_mission(self, titulo):
+        card = MissionCard(titulo)
+        self.missions_container.addWidget(card)
 
     def create_mission(self):
         if self.mission_title_input.isVisible():
@@ -240,7 +292,10 @@ class AppScreen(QtWidgets.QWidget):
         else:
             data = {"missions": []}
 
-        new_id = len(data["missions"]) + 1
+        if data["missions"]:
+            new_id = max(m["id"] for m in data["missions"]) + 1
+        else:
+            new_id = 1
 
         mission = {
             "id": new_id,
@@ -251,12 +306,25 @@ class AppScreen(QtWidgets.QWidget):
         }
 
         data["missions"].append(mission)
+        self.add_mission(title)
 
         with open(MISSIONS_DATA, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
 
         self.mission_title_input.clear()
         self.mission_title_input.hide()
+    
+    def load_missions(self):
+        MISSIONS_DATA = "missions.json"
+
+        if not os.path.exists(MISSIONS_DATA):
+            return
+
+        with open(MISSIONS_DATA, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        for mission in data.get("missions", []):
+            self.add_mission(mission["titulo"])
 
 
 if __name__ == "__main__":
