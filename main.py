@@ -8,6 +8,13 @@ import ctypes
 
 DATA_FILE = "user.json"
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 def load_name():
     if not os.path.exists(DATA_FILE):
         return None
@@ -365,7 +372,7 @@ if __name__ == "__main__":
     except: pass
     app = QtWidgets.QApplication(sys.argv)
     
-    icon = QtGui.QIcon("icone.png")
+    icon = QtGui.QIcon(resource_path("icone.ico"))
     app.setWindowIcon(icon)
     window = MainWindow()
     
