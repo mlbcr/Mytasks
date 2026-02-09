@@ -2,13 +2,14 @@ from PySide6 import QtCore, QtWidgets, QtGui
 from datetime import datetime
 
 class FocusScreen(QtWidgets.QWidget):
+    time_updated = QtCore.Signal(str)
     def __init__(self):
         super().__init__()
         self.mode = "TIMER"
         self.running = False
         self.total_seconds = 3600
         self.current_seconds = self.total_seconds
-        
+        self.start_time = None
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
         
@@ -35,6 +36,7 @@ class FocusScreen(QtWidgets.QWidget):
         main_layout.addWidget(self.build_history_section())
         
         main_layout.addStretch()
+
         scroll.setWidget(container_widget)
         outer_layout.addWidget(scroll)
 
@@ -68,37 +70,37 @@ class FocusScreen(QtWidgets.QWidget):
                 font-weight: 200;
                 font-family: 'Segoe UI Semilight';
             }
-            QLineEdit#TimerInput:read-only {
-                color: #a0a0a0;
-            }
             QTimeEdit {
                 background-color: #1b1430;
                 color: white;
                 border: 1px solid #3d2e63;
                 border-radius: 8px;
                 padding: 5px;
-                font-family: 'Segoe UI';
-                font-size: 13px;
             }
             QTimeEdit::up-button, QTimeEdit::down-button { width: 0px; }
-            
-            QScrollBar:vertical {
-                border: none;
-                background: #0e0b1c;
-                width: 8px;
-                border-radius: 4px;
-            }
-            QScrollBar::handle:vertical {
-                background: #3d2e63;
-                border-radius: 4px;
-            }
         """)
 
     def build_header(self):
-        label = QtWidgets.QLabel("MODO FOCO")
-        label.setAlignment(QtCore.Qt.AlignCenter)
-        label.setStyleSheet("font-size: 22px; font-weight: 800; color: white; letter-spacing: 3px;")
-        return label
+        header_widget = QtWidgets.QWidget()
+        header_layout = QtWidgets.QHBoxLayout(header_widget)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+
+        title_container = QtWidgets.QVBoxLayout()
+        title = QtWidgets.QLabel("MODO FOCO")
+        title.setStyleSheet("font-size: 20px; font-weight: bold; letter-spacing: 1px; color: white;")
+        underline = QtWidgets.QFrame()
+        underline.setFixedHeight(4)
+        underline.setFixedWidth(40)
+        underline.setStyleSheet("background-color: #5E12F8; border-radius: 2px;")
+
+        title_container.addWidget(title)
+        title_container.addWidget(underline)
+
+        header_layout.addLayout(title_container)
+        header_layout.addStretch()
+
+        return header_widget
+
 
     def build_mode_selector(self):
         container = QtWidgets.QWidget()
@@ -195,7 +197,6 @@ class FocusScreen(QtWidgets.QWidget):
 
     def manual_time_edit(self):
         if self.running or self.mode == "CRONOMETRO": return 
-        
         text = self.time_input.text()
         try:
             h, m, s = map(int, text.split(':'))
@@ -209,51 +210,56 @@ class FocusScreen(QtWidgets.QWidget):
         container = QtWidgets.QWidget()
         self.history_layout = QtWidgets.QVBoxLayout(container)
         self.history_layout.setContentsMargins(0, 20, 0, 0)
-        
         title = QtWidgets.QLabel("SESSÕES RECENTES")
         title.setStyleSheet("font-size: 11px; font-weight: 800; color: #5E12F8; letter-spacing: 2px;")
         self.history_layout.addWidget(title)
-        
         self.history_list_container = QtWidgets.QVBoxLayout()
         self.history_list_container.setSpacing(10)
         self.history_layout.addLayout(self.history_list_container)
         return container
 
-    def add_to_history(self, seconds, completed=True):
-        h, rem = divmod(seconds, 3600)
+    def add_to_history(self, start_time, end_time, elapsed_seconds):
+        h, rem = divmod(elapsed_seconds, 3600)
         m, s = divmod(rem, 60)
-        time_str = f"{h:02}:{m:02}:{s:02}"
-        timestamp = datetime.now().strftime("%H:%M • %d/%m")
-        mode_text = self.mode
+        duration_str = f"{h:02}:{m:02}:{s:02}"
+        time_range = f"{start_time.strftime('%H:%M')} — {end_time.strftime('%H:%M')}"
 
         item = QtWidgets.QFrame()
-        item.setStyleSheet("QFrame { background-color: #161025; border: 1px solid #2d234a; border-radius: 10px; }")
-        
+        item.setStyleSheet("QFrame { background-color: #1b1430; border: 1px solid #2d234a; border-radius: 12px; }")
         layout = QtWidgets.QHBoxLayout(item)
         layout.setContentsMargins(20, 15, 20, 15)
 
-        info_layout = QtWidgets.QVBoxLayout()
-        time_display = QtWidgets.QLabel(time_str)
-        time_display.setStyleSheet("font-size: 18px; font-weight: bold; color: white;")
-        sub_info = QtWidgets.QLabel(f"{mode_text}  |  {timestamp}")
-        sub_info.setStyleSheet("font-size: 10px; color: #6a6a6a; font-weight: bold; letter-spacing: 1px;")
-        
-        info_layout.addWidget(time_display)
-        info_layout.addWidget(sub_info)
-        
-        status_tag = QtWidgets.QLabel("CONCLUÍDO" if completed else "NÃO FINALIZADO")
-        status_tag.setStyleSheet(f"font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 4px; color: {'#00fa9a' if completed else '#ff7675'}; border: 1px solid {'#00fa9a' if completed else '#ff7675'};")
+        left_info = QtWidgets.QVBoxLayout()
+        total_time_lbl = QtWidgets.QLabel(f"{duration_str} FOCADO")
+        total_time_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: white;")
+        mode_lbl = QtWidgets.QLabel(self.mode)
+        mode_lbl.setStyleSheet("font-size: 9px; color: #5E12F8; font-weight: 900; letter-spacing: 1px;")
+        left_info.addWidget(total_time_lbl)
+        left_info.addWidget(mode_lbl)
 
-        layout.addLayout(info_layout)
+        right_info = QtWidgets.QVBoxLayout()
+        right_info.setAlignment(QtCore.Qt.AlignRight)
+        range_lbl = QtWidgets.QLabel(time_range)
+        range_lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #a0a0a0;")
+        sub_lbl = QtWidgets.QLabel("HORÁRIO")
+        sub_lbl.setStyleSheet("font-size: 9px; color: #4a4a4a; font-weight: bold;")
+        right_info.addWidget(range_lbl)
+        right_info.addWidget(sub_lbl)
+
+        layout.addLayout(left_info)
         layout.addStretch()
-        layout.addWidget(status_tag)
-
+        layout.addLayout(right_info)
         self.history_list_container.insertWidget(0, item)
 
     def finish_session(self):
-        elapsed = (self.total_seconds - self.current_seconds) if self.mode == "TIMER" else self.current_seconds
-        if elapsed > 0:
-            self.add_to_history(elapsed, completed=True)
+        if self.start_time:
+            end_time = datetime.now()
+            if self.mode == "TIMER":
+                elapsed = self.total_seconds - self.current_seconds
+            else:
+                elapsed = self.current_seconds
+            self.add_to_history(self.start_time, end_time, elapsed)
+            self.start_time = None
         self.stop_timer()
 
     def set_timer(self, seconds):
@@ -267,30 +273,26 @@ class FocusScreen(QtWidgets.QWidget):
         self.mode = mode
         self.time_selector.setVisible(mode == "TIMER")
         self.stop_timer()
-        # Bloqueia edição se for Cronômetro
         self.time_input.setReadOnly(mode == "CRONOMETRO")
 
     def apply_custom_time(self):
         t = self.custom_time.time()
         seconds = (t.hour() * 3600) + (t.minute() * 60) + t.second()
-        if seconds > 0:
-            self.set_timer(seconds)
+        if seconds > 0: self.set_timer(seconds)
 
     def toggle_timer(self):
         if self.running:
             self.timer.stop()
             self.btn_toggle.setText("CONTINUAR")
-            # Só libera edição se estiver no modo TIMER
-            self.time_input.setReadOnly(self.mode == "CRONOMETRO")
         else:
             self.manual_time_edit()
             self.timer.start(1000)
-            self.update_time()
             self.btn_toggle.setText("PAUSAR")
-            self.time_input.setReadOnly(True)
-        
+            if self.start_time is None:
+                self.start_time = datetime.now()
         self.running = not self.running
-        self.btn_finish.setVisible(self.running)
+        self.btn_finish.setVisible(True)
+        self.time_input.setReadOnly(True)
 
     def update_time(self):
         if self.mode == "TIMER":
@@ -303,15 +305,14 @@ class FocusScreen(QtWidgets.QWidget):
     def update_display(self):
         h, rem = divmod(self.current_seconds, 3600)
         m, s = divmod(rem, 60)
-        self.time_input.setText(f"{h:02}:{m:02}:{s:02}")
+        time_str = f"{h:02}:{m:02}:{s:02}"
+        self.time_input.setText(time_str)
+        self.time_updated.emit(time_str)
 
     def stop_timer(self):
-        if self.running:
-            elapsed = (self.total_seconds - self.current_seconds) if self.mode == "TIMER" else self.current_seconds
-            if elapsed > 0: self.add_to_history(elapsed, completed=False)
-
         self.timer.stop()
         self.running = False
+        self.start_time = None
         self.btn_toggle.setText("INICIAR")
         self.btn_finish.setVisible(False)
         self.time_input.setReadOnly(self.mode == "CRONOMETRO")
