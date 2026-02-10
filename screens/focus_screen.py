@@ -1,5 +1,8 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from datetime import datetime
+import os
+from data_manager import load_focus_history, save_focus_history
+
 
 class FocusScreen(QtWidgets.QWidget):
     time_updated = QtCore.Signal(str)
@@ -15,6 +18,7 @@ class FocusScreen(QtWidgets.QWidget):
         
         self.build_ui()
         self.update_display()
+        self.load_initial_history()
 
     def build_ui(self):
         outer_layout = QtWidgets.QVBoxLayout(self)
@@ -218,11 +222,20 @@ class FocusScreen(QtWidgets.QWidget):
         self.history_layout.addLayout(self.history_list_container)
         return container
 
-    def add_to_history(self, start_time, end_time, elapsed_seconds):
+    def load_initial_history(self):
+        data = load_focus_history()
+        for day in sorted(data.keys()):
+            for session in data[day].get("sessions", []):
+                start_dt = datetime.fromisoformat(session["start"])
+                end_dt = datetime.fromisoformat(session["end"])
+                self.add_to_history(start_dt, end_dt, session["elapsed"], mode=session["mode"])
+
+    def add_to_history(self, start_time, end_time, elapsed_seconds, mode=None):
         h, rem = divmod(elapsed_seconds, 3600)
         m, s = divmod(rem, 60)
         duration_str = f"{h:02}:{m:02}:{s:02}"
         time_range = f"{start_time.strftime('%H:%M')} — {end_time.strftime('%H:%M')}"
+        current_mode = mode if mode else self.mode
 
         item = QtWidgets.QFrame()
         item.setStyleSheet("QFrame { background-color: #1b1430; border: 1px solid #2d234a; border-radius: 12px; }")
@@ -231,18 +244,18 @@ class FocusScreen(QtWidgets.QWidget):
 
         left_info = QtWidgets.QVBoxLayout()
         total_time_lbl = QtWidgets.QLabel(f"{duration_str} FOCADO")
-        total_time_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: white;")
-        mode_lbl = QtWidgets.QLabel(self.mode)
-        mode_lbl.setStyleSheet("font-size: 9px; color: #5E12F8; font-weight: 900; letter-spacing: 1px;")
+        total_time_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: white; border: none;")
+        mode_lbl = QtWidgets.QLabel(current_mode)
+        mode_lbl.setStyleSheet("font-size: 9px; color: #5E12F8; font-weight: 900; letter-spacing: 1px; border: none;")
         left_info.addWidget(total_time_lbl)
         left_info.addWidget(mode_lbl)
 
         right_info = QtWidgets.QVBoxLayout()
         right_info.setAlignment(QtCore.Qt.AlignRight)
         range_lbl = QtWidgets.QLabel(time_range)
-        range_lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #a0a0a0;")
-        sub_lbl = QtWidgets.QLabel("HORÁRIO")
-        sub_lbl.setStyleSheet("font-size: 9px; color: #4a4a4a; font-weight: bold;")
+        range_lbl.setStyleSheet("font-size: 13px; font-weight: bold; color: #a0a0a0; border: none;")
+        sub_lbl = QtWidgets.QLabel(start_time.strftime('%d/%m/%Y')) # Mostra a data
+        sub_lbl.setStyleSheet("font-size: 9px; color: #4a4a4a; font-weight: bold; border: none;")
         right_info.addWidget(range_lbl)
         right_info.addWidget(sub_lbl)
 
@@ -252,15 +265,38 @@ class FocusScreen(QtWidgets.QWidget):
         self.history_list_container.insertWidget(0, item)
 
     def finish_session(self):
-        if self.start_time:
-            end_time = datetime.now()
-            if self.mode == "TIMER":
-                elapsed = self.total_seconds - self.current_seconds
-            else:
-                elapsed = self.current_seconds
+        if not self.start_time:
+            self.stop_timer()
+            return
+        end_time = datetime.now()
+        
+        if self.mode == "TIMER":
+            elapsed = self.total_seconds - self.current_seconds
+        else:
+            elapsed = self.current_seconds
+
+        if elapsed > 0:
+            day_key = self.start_time.strftime("%Y-%m-%d")
+            data = load_focus_history()
+            if day_key not in data:
+                data[day_key] = {"total_seconds": 0, "sessions": []}
+            
+            session = {
+                "mode": self.mode,
+                "start": self.start_time.isoformat(),
+                "end": end_time.isoformat(),
+                "elapsed": elapsed
+            }
+            data[day_key]["sessions"].append(session)
+            
+            # Recalcula o total do dia para garantir sincronia com o gráfico
+            data[day_key]["total_seconds"] = sum(s["elapsed"] for s in data[day_key]["sessions"])
+            
+            save_focus_history(data)
             self.add_to_history(self.start_time, end_time, elapsed)
-            self.start_time = None
+        
         self.stop_timer()
+
 
     def set_timer(self, seconds):
         if seconds <= 0: return
@@ -318,3 +354,4 @@ class FocusScreen(QtWidgets.QWidget):
         self.time_input.setReadOnly(self.mode == "CRONOMETRO")
         self.current_seconds = self.total_seconds if self.mode == "TIMER" else 0
         self.update_display()
+
