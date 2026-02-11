@@ -184,8 +184,9 @@ class MissionScreen(QtWidgets.QWidget):
         late = []
         done = []
 
-        # --- FILTRO POR ABA ---
         for m in all_missions:
+            if m.get("status") == "deleted":
+                continue
             tipo = m.get("tipo", "DIÁRIAS")
             prazo = datetime.date.fromisoformat(m["prazo"]) if m.get("prazo") else None
 
@@ -193,26 +194,30 @@ class MissionScreen(QtWidgets.QWidget):
                 continue
 
             valid = False
-            if tipo == "DIÁRIAS" and prazo == today:
-                valid = True
-            elif tipo == "SEMANAIS" and prazo <= end_week:
-                valid = True
-            elif tipo == "MENSAIS" and prazo <= end_month:
-                valid = True
+
+            if tipo == "DIÁRIAS":
+                if prazo == today or prazo < today:
+                    valid = True
+
+            elif tipo == "SEMANAIS":
+                if prazo <= end_week:
+                    valid = True
+
+            elif tipo == "MENSAIS":
+                if prazo <= end_month:
+                    valid = True
 
             if not valid:
                 continue
 
-            # --- CLASSIFICAÇÃO ---
             if m["status"] == "Concluída":
                 done.append(m)
-            elif self.is_late(m.get("prazo")):
+            elif m["status"] != "Concluída" and self.is_late(m.get("prazo")):
                 m["status"] = "Atrasada"
                 late.append(m)
             else:
                 active.append(m)
 
-        # --- RENDERIZAÇÃO ---
         def render(m):
             card = MissionCard(
                 m["id"],
@@ -225,16 +230,19 @@ class MissionScreen(QtWidgets.QWidget):
             )
             card.clicked.connect(self.edit)
             card.status_changed.connect(self.sync)
-            self.missions_container.addWidget(card)
+            main_window = self.window()
+            card.associate_requested.connect(main_window.set_focus_mission)
 
-        if late:
-            self.add_section_title("ATRASADAS")
-            for m in late:
-                render(m)
+            self.missions_container.addWidget(card)
 
         if active:
             self.add_section_title("ATIVAS")
             for m in active:
+                render(m)
+
+        if late:
+            self.add_section_title("ATRASADAS")
+            for m in late:
                 render(m)
 
         if done:
@@ -270,7 +278,7 @@ class MissionScreen(QtWidgets.QWidget):
             "titulo": title,
             "status": "Pendente",
             "xp": 10,
-            "categoria": "INTELIGÊNCIA",
+            "categoria": None,
             "prazo": prazo.isoformat(),
             "data_criacao": today.isoformat(),
             "descricao": "",
@@ -338,6 +346,7 @@ class MissionScreen(QtWidgets.QWidget):
 
         modal = EditMissionModal(mission_data, self)
         modal.accepted.connect(lambda nv: self.save_edit(card.mission_id, nv))
+        modal.deleted.connect(self.delete_mission)
         modal.exec()
 
     def save_edit(self, m_id, nv):
@@ -348,3 +357,15 @@ class MissionScreen(QtWidgets.QWidget):
                 break
         save_missions_to_file(data)
         self.load_all()
+    
+    def delete_mission(self, m_id):
+        data = load_missions()
+
+        for m in data["missions"]:
+            if m["id"] == m_id:
+                m["status"] = "deleted"
+                break
+
+        save_missions_to_file(data)
+        self.load_all()
+

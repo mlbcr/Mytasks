@@ -2,8 +2,8 @@
   "usuario": {
     "nome": "mary",
     "nivel": 0,
-    "xp": 0,
-    "pontos_disponiveis": 0,
+    "xp": 10,
+    "pontos_disponiveis": 1,
     "atributos": {
       "inteligencia": 0,
       "forca": 0,

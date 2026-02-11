@@ -6,6 +6,8 @@ from screens.mission_screen import MissionScreen
 from screens.focus_screen import FocusScreen
 from screens.home_screen import HomeScreen
 from widgets.focus_overlay import FocusOverlay
+from screens.loading_screen import LoadingScreen
+
 
 class SideMenu(QtWidgets.QFrame):
     clicked = QtCore.Signal(int)
@@ -51,8 +53,8 @@ class MainWindow(QtWidgets.QWidget):
         layout.addWidget(self.menu)
         
         self.screen_home = HomeScreen()
-        self.screen_missions = MissionScreen()
-        self.screen_focus = FocusScreen()
+        self.screen_missions = MissionScreen(self)
+        self.screen_focus = FocusScreen(self)
         self.screen_name = NameScreen(self) 
         
         self.overlay = self.menu.timer_widget 
@@ -91,6 +93,16 @@ class MainWindow(QtWidgets.QWidget):
         else:
             self.overlay.hide()
 
+    def setup_connections(self):
+        self.mission_screen.associate_requested.connect(self.handle_mission_association)
+
+    def handle_mission_association(self, mission_id):
+        self.focus_screen.set_associated_mission(mission_id)
+        self.stack.setCurrentIndex(1)
+
+    def set_focus_mission(self, mission_id):
+        self.screen_focus.set_associated_mission(mission_id)
+        self.stack.setCurrentIndex(3)  
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -106,6 +118,15 @@ if __name__ == "__main__":
     app_icon = QtGui.QIcon(resource_path("images/icone.ico"))
     app.setWindowIcon(app_icon)
 
+    loading = LoadingScreen()
     window = MainWindow()
-    window.show()
+
+    def start_main():
+        loading.close()
+        window.show()
+
+    loading.finished.connect(start_main)
+
+    loading.show()
+
     sys.exit(app.exec())

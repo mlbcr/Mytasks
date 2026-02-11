@@ -16,7 +16,7 @@ class FocusOverlay(QtWidgets.QFrame):
         self.label.setStyleSheet("font-weight: bold; font-size: 14px; border: none; background: transparent;")
         self.mode_label = QtWidgets.QLabel("FOCADO")
         self.mode_label.setStyleSheet("font-size: 9px; font-weight: 800; border: none; background: transparent; color: rgba(255,255,255,0.7);")
-        
+
         layout.addStretch()
         v_box = QtWidgets.QVBoxLayout()
         v_box.setSpacing(0)

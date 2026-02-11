@@ -18,27 +18,7 @@
       "xp": 2,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
-      "prazo": "2026-02-10"
-    },
-    {
-      "id": 3,
-      "titulo": "Testeee",
-      "status": "Pendente",
-      "xp": 10,
-      "prazo": "2026-02-09",
-      "data_criacao": "2026-02-08",
-      "categoria": "INTELIGÊNCIA",
-      "descricao": ""
-    },
-    {
-      "id": 4,
-      "titulo": "Vamos criar a",
-      "status": "Pendente",
-      "xp": 10,
-      "prazo": "2026-02-08",
-      "data_criacao": "2026-02-08",
-      "categoria": "FORÇA",
-      "descricao": ""
+      "prazo": "2026-02-11"
     },
     {
       "id": 5,
@@ -49,15 +29,6 @@
       "data_criacao": "2026-02-08",
       "categoria": "VITALIDADE",
       "descricao": ""
-    },
-    {
-      "id": 6,
-      "titulo": "Teste",
-      "status": "Pendente",
-      "xp": 10,
-      "categoria": "SOCIAL",
-      "prazo": "2026-02-10",
-      "data_criacao": "2026-02-10"
     },
     {
       "id": 7,
@@ -78,6 +49,39 @@
       "data_criacao": "2026-02-10",
       "descricao": "",
       "tipo": "SEMANAIS"
+    },
+    {
+      "id": 9,
+      "titulo": "Teste milésima vez",
+      "status": "Pendente",
+      "xp": 10,
+      "categoria": "INTELIGÊNCIA",
+      "prazo": "2026-02-11",
+      "data_criacao": "2026-02-11",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 10,
+      "titulo": "AAAAA",
+      "status": "deleted",
+      "xp": 10,
+      "categoria": "INTELIGÊNCIA",
+      "prazo": "2026-02-11",
+      "data_criacao": "2026-02-11",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 11,
+      "titulo": "Dez mil missões",
+      "status": "Pendente",
+      "xp": 10,
+      "categoria": null,
+      "prazo": "2026-02-11",
+      "data_criacao": "2026-02-11",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
     }
   ]
 }
