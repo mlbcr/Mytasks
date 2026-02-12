@@ -210,8 +210,17 @@ class EditMissionModal(QtWidgets.QDialog):
         v1 = QtWidgets.QVBoxLayout()
         v1.addWidget(QtWidgets.QLabel("CATEGORIA"))
         self.edit_cat = QtWidgets.QComboBox()
+        self.edit_cat.addItem("")
         self.edit_cat.addItems(list(CATEGORIAS.keys()))
-        self.edit_cat.setCurrentText(self.data.get("categoria", "SOCIAL"))
+
+        # Seleciona a categoria atual, se houver
+        categoria_inicial = self.data.get("categoria")
+        if categoria_inicial and categoria_inicial in CATEGORIAS:
+            self.edit_cat.setCurrentText(categoria_inicial)
+        else:
+            self.edit_cat.setCurrentIndex(0)
+
+
         v1.addWidget(self.edit_cat)
 
         v2 = QtWidgets.QVBoxLayout()
