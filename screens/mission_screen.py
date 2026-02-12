@@ -4,6 +4,8 @@ from data_manager import load_missions, save_missions_to_file
 from widgets.mission_card import MissionCard
 from widgets.edit_modal import EditMissionModal
 from widgets.custom_button import RotatableButton
+from data_manager import load_user, save_user
+from progression import add_xp_to_user
 
 def end_of_day():
     return datetime.date.today()
@@ -20,6 +22,8 @@ def end_of_month():
 
 
 class MissionScreen(QtWidgets.QWidget):
+    mission_completed = QtCore.Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.current_filter = "DIÁRIAS" 
@@ -277,7 +281,7 @@ class MissionScreen(QtWidgets.QWidget):
             "id": max([m["id"] for m in data["missions"]] + [0]) + 1,
             "titulo": title,
             "status": "Pendente",
-            "xp": 10,
+            "xp": 5,
             "categoria": None,
             "prazo": prazo.isoformat(),
             "data_criacao": today.isoformat(),
@@ -290,8 +294,6 @@ class MissionScreen(QtWidgets.QWidget):
         self.load_all()
         self.input_new.clear()
         self.toggle_add()
-
-    # (Mantenha os métodos toggle_add, sync, edit e save_edit iguais ao seu código original)
 
     def toggle_add(self):
         is_open = self.input_new.isVisible()
@@ -332,13 +334,33 @@ class MissionScreen(QtWidgets.QWidget):
                 if card.is_done:
                     m["status"] = "Concluída"
                     gained_xp = self.calculate_xp(m)
+
+                    user_data = load_user()
+                    user_data = add_xp_to_user(user_data, gained_xp)
+
+                    categoria = m.get("categoria")
+                    if categoria:
+                        key_map = {
+                            "INTELIGÊNCIA": "inteligencia",
+                            "FORÇA": "forca",
+                            "VITALIDADE": "vitalidade",
+                            "CRIATIVIDADE": "criatividade",
+                            "SOCIAL": "social"
+                        }
+
+                        attr_key = key_map.get(categoria.upper())
+
+                        if attr_key:
+                            user_data["usuario"]["atributos"][attr_key] += 1
+                    save_user(user_data)
+
                     print(f"XP ganho: {gained_xp}")
                 else:
                     m["status"] = "Pendente"
 
         save_missions_to_file(data)
+        self.mission_completed.emit()
         self.load_all()
-
 
     def edit(self, card):
         data = load_missions()

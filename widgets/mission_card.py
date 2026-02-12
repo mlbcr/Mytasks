@@ -83,12 +83,11 @@ class MissionCard(QtWidgets.QFrame):
         """)
         self.btn_menu.clicked.connect(self.open_menu)
 
-        # Montagem do Layout Horizontal
         layout.addWidget(self.btn_status)
-        layout.addLayout(text_layout, 1) # Ocupa o espaço disponível
+        layout.addLayout(text_layout, 1) 
         layout.addStretch()
         layout.addWidget(right_info_container)
-        layout.addWidget(self.btn_menu) # Fica por último (extremo direito)
+        layout.addWidget(self.btn_menu) 
 
         self.update_categoria(self.categoria)
         self.update_prazo(self.prazo)

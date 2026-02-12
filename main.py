@@ -54,7 +54,11 @@ class MainWindow(QtWidgets.QWidget):
         
         self.screen_home = HomeScreen()
         self.screen_missions = MissionScreen(self)
+        self.screen_missions.mission_completed.connect(
+            self.screen_home.refresh
+        )
         self.screen_focus = FocusScreen(self)
+        self.screen_focus.foco_finalizado.connect(self.screen_home.refresh)
         self.screen_name = NameScreen(self) 
         
         self.overlay = self.menu.timer_widget 

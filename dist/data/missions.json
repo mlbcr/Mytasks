@@ -1,0 +1,92 @@
+{
+  "missions": [
+    {
+      "id": 1,
+      "titulo": "Permitir mostrar o gráfico de Foco",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": null,
+      "prazo": "2026-02-28",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "MENSAIS"
+    },
+    {
+      "id": 2,
+      "titulo": "Instalar materiais do Coursera Machine Learning Specialization",
+      "status": "Concluída",
+      "xp": 8,
+      "categoria": "INTELIGÊNCIA",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 3,
+      "titulo": "Fazer Exercício Físico",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "FORÇA",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 4,
+      "titulo": "Teste",
+      "status": "Concluída",
+      "xp": 9,
+      "categoria": "INTELIGÊNCIA",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 5,
+      "titulo": "teste",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": null,
+      "prazo": "2026-02-15",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "SEMANAIS"
+    },
+    {
+      "id": 6,
+      "titulo": "Teste",
+      "status": "Concluída",
+      "xp": 5,
+      "categoria": "INTELIGÊNCIA",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 7,
+      "titulo": "Eat bananas",
+      "status": "Concluída",
+      "xp": 8,
+      "categoria": "CRIATIVIDADE",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 8,
+      "titulo": "teste",
+      "status": "Concluída",
+      "xp": 5,
+      "categoria": null,
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    }
+  ]
+}

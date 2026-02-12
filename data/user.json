@@ -1,13 +1,13 @@
 {
   "usuario": {
     "nome": "mary",
-    "nivel": 0,
-    "xp": 10,
-    "pontos_disponiveis": 1,
+    "nivel": 11,
+    "xp": 38,
+    "pontos_disponiveis": 0,
     "atributos": {
-      "inteligencia": 0,
-      "forca": 0,
-      "vitalidade": 0,
+      "inteligencia": 3,
+      "forca": 2,
+      "vitalidade": 3,
       "criatividade": 0,
       "social": 0
     }

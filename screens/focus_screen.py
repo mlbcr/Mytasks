@@ -4,6 +4,7 @@ from data_manager import load_focus_history, save_focus_history, load_missions
 
 class FocusScreen(QtWidgets.QWidget):
     time_updated = QtCore.Signal(str)
+    foco_finalizado = QtCore.Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -287,13 +288,30 @@ class FocusScreen(QtWidgets.QWidget):
 
     def load_initial_history(self):
         data = load_focus_history()
-        for day in sorted(data.keys()):
-            for session in data[day].get("sessions", []):
-                start_dt = datetime.fromisoformat(session["start"])
-                end_dt = datetime.fromisoformat(session["end"])
-                self.add_to_history(start_dt, end_dt, session["elapsed"], 
-                                    mode=session.get("mode"), 
-                                    mission_id=session.get("mission_id"))
+
+        today_key = datetime.now().strftime("%Y-%m-%d")
+        today_data = data.get(today_key, {})
+
+        sessions = today_data.get("sessions", [])
+
+        if not sessions:
+            empty_label = QtWidgets.QLabel("Nenhuma sessão hoje ainda.")
+            empty_label.setStyleSheet("color: #4a4a4a; font-size: 12px;")
+            self.history_list_container.addWidget(empty_label)
+            return
+
+        for session in reversed(sessions):
+            start_dt = datetime.fromisoformat(session["start"])
+            end_dt = datetime.fromisoformat(session["end"])
+
+            self.add_to_history(
+                start_dt,
+                end_dt,
+                session["elapsed"],
+                mode=session.get("mode"),
+                mission_id=session.get("mission_id")
+            )
+
     
     def add_to_history(self, start_time, end_time, elapsed_seconds, mode=None, mission_id=None):
         h, rem = divmod(elapsed_seconds, 3600); m, s = divmod(rem, 60)
@@ -341,7 +359,7 @@ class FocusScreen(QtWidgets.QWidget):
         if not self.start_time: self.stop_timer(); return
         end_time = datetime.now()
         elapsed = (self.total_seconds - self.current_seconds) if self.mode == "TIMER" else self.current_seconds
-        
+
         if elapsed > 0:
             day_key = self.start_time.strftime("%Y-%m-%d")
             data = load_focus_history()
@@ -362,6 +380,7 @@ class FocusScreen(QtWidgets.QWidget):
             
             self.add_to_history(self.start_time, end_time, elapsed, mission_id=self.current_mission_id)
         
+        self.foco_finalizado.emit()
         self.stop_timer()
 
     def set_timer(self, seconds):

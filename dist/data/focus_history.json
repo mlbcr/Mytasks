@@ -1,0 +1,63 @@
+{
+  "2026-02-12": {
+    "total_seconds": 37,
+    "sessions": [
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T00:26:06.633332",
+        "end": "2026-02-12T00:26:08.572303",
+        "elapsed": 1,
+        "mission_id": null
+      },
+      {
+        "mode": "CRONOMETRO",
+        "start": "2026-02-12T00:26:26.886211",
+        "end": "2026-02-12T00:26:29.214544",
+        "elapsed": 2,
+        "mission_id": null
+      },
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T00:38:10.493661",
+        "end": "2026-02-12T00:38:15.804540",
+        "elapsed": 5,
+        "mission_id": null
+      },
+      {
+        "mode": "CRONOMETRO",
+        "start": "2026-02-12T00:38:22.008611",
+        "end": "2026-02-12T00:38:26.220815",
+        "elapsed": 4,
+        "mission_id": null
+      },
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T00:38:46.625407",
+        "end": "2026-02-12T00:38:59.513773",
+        "elapsed": 12,
+        "mission_id": 3
+      },
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T00:47:58.769968",
+        "end": "2026-02-12T00:48:01.090766",
+        "elapsed": 2,
+        "mission_id": null
+      },
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T00:48:11.064881",
+        "end": "2026-02-12T00:48:19.549728",
+        "elapsed": 8,
+        "mission_id": 3
+      },
+      {
+        "mode": "CRONOMETRO",
+        "start": "2026-02-12T00:48:42.946813",
+        "end": "2026-02-12T00:48:46.703738",
+        "elapsed": 3,
+        "mission_id": 3
+      }
+    ]
+  }
+}
