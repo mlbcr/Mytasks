@@ -1,0 +1,22 @@
+{
+    "notes": [
+        {
+            "id": 1,
+            "title": "Nota #1",
+            "text": "aaaaer",
+            "created_at": "2026-02-12T21:41:44.396483"
+        },
+        {
+            "id": 2,
+            "title": "Plano de Exercício",
+            "text": "- 30 agachamentos\n- 30 polichinelos\n- 30 seg prancha",
+            "created_at": "2026-02-12T23:10:33.190398"
+        },
+        {
+            "id": 3,
+            "title": "oiiiiiiiiii",
+            "text": "ooiiii\nvava\nereroi\naaaaa\n\n\noioioi",
+            "created_at": "2026-02-12T23:14:32.643123"
+        }
+    ]
+}

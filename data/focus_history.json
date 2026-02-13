@@ -87,5 +87,24 @@
         "mission_id": null
       }
     ]
+  },
+  "2026-02-12": {
+    "total_seconds": 12,
+    "sessions": [
+      {
+        "mode": "TIMER",
+        "start": "2026-02-12T23:41:17.964517",
+        "end": "2026-02-12T23:41:24.114792",
+        "elapsed": 6,
+        "mission_id": 17
+      },
+      {
+        "mode": "CRONOMETRO",
+        "start": "2026-02-12T23:41:45.616438",
+        "end": "2026-02-12T23:41:52.301513",
+        "elapsed": 6,
+        "mission_id": 17
+      }
+    ]
   }
 }

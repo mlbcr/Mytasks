@@ -51,19 +51,29 @@ class MissionScreen(QtWidgets.QWidget):
         title_container.addWidget(underline)
         
         self.btn_add = RotatableButton("+")
-        self.btn_add.setFixedSize(50, 50)
+        self.btn_add.setFixedSize(55, 55)
+        self.btn_add.setCursor(QtCore.Qt.PointingHandCursor)
         self.btn_add.clicked.connect(self.toggle_add)
+        
         self.btn_add.setStyleSheet("""
             QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #7B2FF7, stop:1 #5E12F8);
                 color: white;
-                background-color: #5E12F8;
-                border-radius: 25px;
+                border-radius: 27px; /* Metade do tamanho para ser circular */
                 font-size: 28px;
-                line-height: 50px;
-                padding: 0px 0px 4px 0px;
-                border: none;
+                font-weight: bold;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding-bottom: 5px;
             }
-            """)
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #8C4BFF, stop:1 #6D2AF9);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            QPushButton:pressed {
+                background: #4A0EC7;
+                padding-top: 2px; /* Efeito de clique */
+            }
+        """)
 
         
         header_layout.addLayout(title_container)
@@ -171,6 +181,20 @@ class MissionScreen(QtWidgets.QWidget):
         self.missions_container.addWidget(label)
 
 
+    def migrate_late_to_daily(self, missions):
+        today = datetime.date.today()
+        for m in missions:
+            if m.get("status") not in ["Concluída", "deleted"]:
+                prazo_iso = m.get("prazo")
+                if not prazo_iso:
+                    continue
+                
+                prazo = datetime.date.fromisoformat(prazo_iso)
+                
+                if prazo <= today:
+                    m["tipo"] = "DIÁRIAS"
+                    m["prazo"] = today.isoformat()
+
     def load_all(self):
         while self.missions_container.count():
             w = self.missions_container.takeAt(0).widget()
@@ -179,6 +203,9 @@ class MissionScreen(QtWidgets.QWidget):
 
         data = load_missions()
         all_missions = data.get("missions", [])
+        
+        self.migrate_late_to_daily(all_missions)
+        save_missions_to_file(data)
 
         today = datetime.date.today()
         end_week = end_of_week()

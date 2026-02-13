@@ -1,15 +1,15 @@
 {
   "usuario": {
     "nome": "mary",
-    "nivel": 11,
-    "xp": 38,
+    "nivel": 12,
+    "xp": 25,
     "pontos_disponiveis": 0,
     "atributos": {
       "inteligencia": 3,
       "forca": 2,
       "vitalidade": 3,
       "criatividade": 0,
-      "social": 0
+      "social": 2
     }
   },
   "sequencia": {

@@ -42,7 +42,7 @@
     {
       "id": 8,
       "titulo": "Teste",
-      "status": "Atrasada",
+      "status": "deleted",
       "xp": 10,
       "categoria": "INTELIGÊNCIA",
       "prazo": "2026-02-15",
@@ -93,6 +93,50 @@
       "data_criacao": "2026-02-12",
       "descricao": "",
       "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 14,
+      "titulo": "Jojo",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 15,
+      "titulo": "teste2",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 16,
+      "titulo": "maria",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-12",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 17,
+      "titulo": "Falar com meu amor",
+      "status": "Pendente",
+      "xp": 30,
+      "categoria": "SOCIAL",
+      "prazo": "2026-02-13",
+      "data_criacao": "2026-02-12",
+      "descricao": "",
+      "tipo": "SEMANAIS"
     }
   ]
 }

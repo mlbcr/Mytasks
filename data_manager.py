@@ -6,6 +6,7 @@ DATA_DIR = "data"
 DATA_FILE = os.path.join(DATA_DIR, "user.json")
 MISSIONS_DATA = os.path.join(DATA_DIR, "missions.json")
 FOCUS_DATA = os.path.join(DATA_DIR, "focus_history.json")
+NOTES_FILE = os.path.join(DATA_DIR, "notes.json")
 
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
@@ -92,3 +93,24 @@ def load_user():
 def save_user(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+def load_notes():
+    if not os.path.exists(NOTES_FILE):
+        return {"notes": []}
+
+    try:
+        with open(NOTES_FILE, "r", encoding="utf-8") as f:
+            data = f.read().strip()
+
+            if not data:
+                return {"notes": []}
+
+            return json.loads(data)
+
+    except json.JSONDecodeError:
+        return {"notes": []}
+
+
+def save_notes(data):
+    with open(NOTES_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
