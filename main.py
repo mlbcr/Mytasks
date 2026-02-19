@@ -8,6 +8,7 @@ from screens.home_screen import HomeScreen
 from screens.notes_screen import NotesScreen
 from widgets.focus_overlay import FocusOverlay
 from screens.loading_screen import LoadingScreen
+from screens.planner_screen import PlannerScreen
 from screens.name_screen import NameScreen 
 from screens.config_screen import ConfigScreen 
 
@@ -68,10 +69,11 @@ class SideMenu(QtWidgets.QFrame):
 
         menu_items = [
             ("INÍCIO", "images/icons/home.png", 0),
-            ("MISSÕES", "images/icons/missions.png", 1),
-            ("FOCO", "images/icons/focus.png", 2),
-            ("ANOTAÇÕES", "images/icons/notes.png", 3),
-            ("CONFIGURAÇÕES", "images/icons/settings.png", 4),
+            ("PLANNER", "images/icons/planner.png", 1),
+            ("MISSÕES", "images/icons/missions.png", 2),
+            ("FOCO", "images/icons/focus.png", 3),
+            ("ANOTAÇÕES", "images/icons/notes.png", 4),
+            ("CONFIGURAÇÕES", "images/icons/settings.png", 5),
         ]
 
         for text, icon_path, index in menu_items:
@@ -122,6 +124,7 @@ class MainWindow(QtWidgets.QWidget):
         self.screen_missions.mission_completed.connect(
             self.screen_home.refresh
         )
+        self.screen_planner = PlannerScreen(self)
         self.screen_focus = FocusScreen(self)
         self.screen_focus.foco_finalizado.connect(self.screen_home.refresh)
         self.screen_name = NameScreen(self) 
@@ -129,10 +132,13 @@ class MainWindow(QtWidgets.QWidget):
         self.screen_config = ConfigScreen(self)
         self.overlay = self.menu.timer_widget 
         self.screen_focus.time_updated.connect(self.manage_overlay)
+        self.screen_missions.mission_completed.connect(self.screen_planner.load_all)
+
 
         self.stack = QtWidgets.QStackedWidget()
         self.stack.addWidget(self.screen_name)    
         self.stack.addWidget(self.screen_home) 
+        self.stack.addWidget(self.screen_planner)
         self.stack.addWidget(self.screen_missions) 
         self.stack.addWidget(self.screen_focus)    
         self.stack.addWidget(self.screen_notes)

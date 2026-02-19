@@ -1,5 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 
+
 CATEGORIAS = {
     "INTELIGÊNCIA": "#f1c40f", "FORÇA": "#e74c3c",
     "VITALIDADE": "#2ecc71", "CRIATIVIDADE": "#3498db", "SOCIAL": "#95a5a6"
@@ -21,18 +22,15 @@ class MissionCard(QtWidgets.QFrame):
         self.setMinimumHeight(90)
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
         
-        # Layout Principal
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(20, 12, 15, 12)
         layout.setSpacing(15)
 
-        # 1. Checkbox (Esquerda)
         self.btn_status = QtWidgets.QPushButton()
         self.btn_status.setFixedSize(24, 24)
         self.btn_status.setCursor(QtCore.Qt.PointingHandCursor)
         self.btn_status.clicked.connect(self.toggle_status)
 
-        # 2. Área de Texto (Centro)
         text_layout = QtWidgets.QVBoxLayout()
         text_layout.setSpacing(4)
         
@@ -48,7 +46,6 @@ class MissionCard(QtWidgets.QFrame):
         text_layout.addWidget(self.label_desc)
         text_layout.addWidget(self.cat_chip)
 
-        # 3. Informações de XP/Prazo (Direita)
         right_info_container = QtWidgets.QWidget()
         right_info_layout = QtWidgets.QVBoxLayout(right_info_container)
         right_info_layout.setContentsMargins(0, 0, 0, 0)

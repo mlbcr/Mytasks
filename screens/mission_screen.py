@@ -1,5 +1,7 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 import datetime
+from PySide6.QtMultimedia import QSoundEffect
+from PySide6.QtCore import QUrl
 from data_manager import load_missions, save_missions_to_file
 from widgets.mission_card import MissionCard
 from widgets.edit_modal import EditMissionModal
@@ -32,7 +34,14 @@ class MissionScreen(QtWidgets.QWidget):
         self.layout.setContentsMargins(40, 40, 40, 40)
         self.layout.setSpacing(25)
         
-        # --- HEADER ---
+        self.finished_mission_sound = QSoundEffect(self)
+        self.finished_mission_sound.setSource(QUrl.fromLocalFile("audio/complete.wav"))
+        self.finished_mission_sound.setVolume(0.5)
+
+        self.unfinished_mission_sound = QSoundEffect(self)
+        self.unfinished_mission_sound.setSource(QUrl.fromLocalFile("audio/incomplete.wav"))
+        self.unfinished_mission_sound.setVolume(0.3)
+
         header_widget = QtWidgets.QWidget()
         header_layout = QtWidgets.QHBoxLayout(header_widget)
         header_layout.setContentsMargins(0, 0, 0, 0)
@@ -81,10 +90,8 @@ class MissionScreen(QtWidgets.QWidget):
         header_layout.addWidget(self.btn_add)
         self.layout.addWidget(header_widget)
 
-        # --- SELETOR DE CATEGORIA (TABS) ---
         self.layout.addWidget(self.build_tabs())
 
-        # --- INPUT NOVA MISSÃO ---
         self.input_new = QtWidgets.QLineEdit()
         self.input_new.setPlaceholderText("O que vamos realizar agora?")
         self.input_new.setFixedHeight(45)
@@ -93,7 +100,6 @@ class MissionScreen(QtWidgets.QWidget):
         self.input_new.returnPressed.connect(self.create_mission)
         self.layout.addWidget(self.input_new)
 
-        # --- LISTA DE MISSÕES ---
         self.missions_container = QtWidgets.QVBoxLayout()
         self.missions_container.setAlignment(QtCore.Qt.AlignTop)
         self.missions_container.setSpacing(12)
@@ -139,7 +145,6 @@ class MissionScreen(QtWidgets.QWidget):
             btn.setFixedHeight(38)
             btn.setCursor(QtCore.Qt.PointingHandCursor)
             
-            # Estilo dinâmico para os botões das abas
             btn.setStyleSheet("""
                 QPushButton {
                     background-color: transparent;
@@ -312,6 +317,8 @@ class MissionScreen(QtWidgets.QWidget):
             "categoria": None,
             "prazo": prazo.isoformat(),
             "data_criacao": today.isoformat(),
+            "horario_inicio": None,
+            "horario_fim": None,
             "descricao": "",
             "tipo": self.current_filter
         }
@@ -355,39 +362,61 @@ class MissionScreen(QtWidgets.QWidget):
 
     def sync(self, card):
         data = load_missions()
+        user_data = load_user()  
 
         for m in data["missions"]:
             if m["id"] == card.mission_id:
                 if card.is_done:
-                    m["status"] = "Concluída"
-                    gained_xp = self.calculate_xp(m)
+                    if m["status"] != "Concluída":  
+                        m["status"] = "Concluída"
+                        self.finished_mission_sound.play()
 
-                    user_data = load_user()
-                    user_data = add_xp_to_user(user_data, gained_xp)
+                        gained_xp = self.calculate_xp(m)
+                        user_data = add_xp_to_user(user_data, gained_xp)
 
-                    categoria = m.get("categoria")
-                    if categoria:
-                        key_map = {
-                            "INTELIGÊNCIA": "inteligencia",
-                            "FORÇA": "forca",
-                            "VITALIDADE": "vitalidade",
-                            "CRIATIVIDADE": "criatividade",
-                            "SOCIAL": "social"
-                        }
+                        categoria = m.get("categoria")
+                        if categoria:
+                            key_map = {
+                                "INTELIGÊNCIA": "inteligencia",
+                                "FORÇA": "forca",
+                                "VITALIDADE": "vitalidade",
+                                "CRIATIVIDADE": "criatividade",
+                                "SOCIAL": "social"
+                            }
+                            attr_key = key_map.get(categoria.upper())
+                            if attr_key:
+                                user_data["usuario"]["atributos"][attr_key] += 1
 
-                        attr_key = key_map.get(categoria.upper())
+                        print(f"XP ganho: {gained_xp}")
 
-                        if attr_key:
-                            user_data["usuario"]["atributos"][attr_key] += 1
-                    save_user(user_data)
+                else:  
+                    if m["status"] == "Concluída":  
+                        m["status"] = "Pendente"
+                        self.unfinished_mission_sound.play()
 
-                    print(f"XP ganho: {gained_xp}")
-                else:
-                    m["status"] = "Pendente"
+                        lost_xp = self.calculate_xp(m)
+                        user_data = add_xp_to_user(user_data, -lost_xp)  
 
+                        categoria = m.get("categoria")
+                        if categoria:
+                            key_map = {
+                                "INTELIGÊNCIA": "inteligencia",
+                                "FORÇA": "forca",
+                                "VITALIDADE": "vitalidade",
+                                "CRIATIVIDADE": "criatividade",
+                                "SOCIAL": "social"
+                            }
+                            attr_key = key_map.get(categoria.upper())
+                            if attr_key:
+                                user_data["usuario"]["atributos"][attr_key] -= 1 
+
+                        print(f"XP perdido: {lost_xp}")
+
+        save_user(user_data)
         save_missions_to_file(data)
         self.mission_completed.emit()
         self.load_all()
+
 
     def edit(self, card):
         data = load_missions()
@@ -406,6 +435,7 @@ class MissionScreen(QtWidgets.QWidget):
                 break
         save_missions_to_file(data)
         self.load_all()
+        self.mission_completed.emit()
     
     def delete_mission(self, m_id):
         data = load_missions()
@@ -417,4 +447,5 @@ class MissionScreen(QtWidgets.QWidget):
 
         save_missions_to_file(data)
         self.load_all()
+        self.mission_completed.emit()
 

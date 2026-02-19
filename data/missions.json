@@ -8,27 +8,36 @@
       "xp": 10,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
-      "prazo": "2026-02-08"
+      "prazo": "2026-02-18",
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "09:00",
+      "horario_fim": "10:00"
     },
     {
       "id": 2,
       "titulo": "Dia a dia feliz",
       "descricao": "Fazer a missão muito bem nossa que legal essa missão ",
-      "status": "Concluída",
+      "status": "Pendente",
       "xp": 2,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
-      "prazo": "2026-02-11"
+      "prazo": "2026-02-18",
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "14:00",
+      "horario_fim": "15:00"
     },
     {
       "id": 5,
       "titulo": "Aaa",
-      "status": "Concluída",
+      "status": "Pendente",
       "xp": 12,
-      "prazo": "2026-02-08",
+      "prazo": "2026-02-18",
       "data_criacao": "2026-02-08",
       "categoria": "VITALIDADE",
-      "descricao": ""
+      "descricao": "",
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "14:00",
+      "horario_fim": "15:00"
     },
     {
       "id": 7,
@@ -36,8 +45,11 @@
       "status": "Concluída",
       "xp": 10,
       "categoria": "SOCIAL",
-      "prazo": "2026-02-10",
-      "data_criacao": "2026-02-10"
+      "prazo": "2026-02-13",
+      "data_criacao": "2026-02-10",
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "14:00",
+      "horario_fim": "15:30"
     },
     {
       "id": 8,
@@ -56,10 +68,12 @@
       "status": "Concluída",
       "xp": 10,
       "categoria": "INTELIGÊNCIA",
-      "prazo": "2026-02-11",
+      "prazo": "2026-02-13",
       "data_criacao": "2026-02-11",
       "descricao": "",
-      "tipo": "DIÁRIAS"
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "14:00",
+      "horario_fim": "15:00"
     },
     {
       "id": 10,
@@ -81,15 +95,17 @@
       "prazo": "2026-02-11",
       "data_criacao": "2026-02-11",
       "descricao": "",
-      "tipo": "DIÁRIAS"
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "12:00",
+      "horario_fim": "13:00"
     },
     {
       "id": 13,
       "titulo": "rttee",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 5,
       "categoria": "",
-      "prazo": "2026-02-12",
+      "prazo": "2026-02-13",
       "data_criacao": "2026-02-12",
       "descricao": "",
       "tipo": "DIÁRIAS"
@@ -97,10 +113,10 @@
     {
       "id": 14,
       "titulo": "Jojo",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 5,
       "categoria": "",
-      "prazo": "2026-02-12",
+      "prazo": "2026-02-13",
       "data_criacao": "2026-02-12",
       "descricao": "",
       "tipo": "DIÁRIAS"
@@ -108,10 +124,10 @@
     {
       "id": 15,
       "titulo": "teste2",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 5,
       "categoria": "",
-      "prazo": "2026-02-12",
+      "prazo": "2026-02-13",
       "data_criacao": "2026-02-12",
       "descricao": "",
       "tipo": "DIÁRIAS"
@@ -119,10 +135,10 @@
     {
       "id": 16,
       "titulo": "maria",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 5,
       "categoria": "",
-      "prazo": "2026-02-12",
+      "prazo": "2026-02-13",
       "data_criacao": "2026-02-12",
       "descricao": "",
       "tipo": "DIÁRIAS"
@@ -130,13 +146,54 @@
     {
       "id": 17,
       "titulo": "Falar com meu amor",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 30,
       "categoria": "SOCIAL",
       "prazo": "2026-02-13",
       "data_criacao": "2026-02-12",
       "descricao": "",
+      "tipo": "DIÁRIAS",
+      "horario_inicio": "00:00",
+      "horario_fim": "23:50"
+    },
+    {
+      "id": 18,
+      "titulo": "oier",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": null,
+      "prazo": "2026-02-18",
+      "data_criacao": "2026-02-18",
+      "horario_inicio": "12:00",
+      "horario_fim": "12:00",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 19,
+      "titulo": "agara",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-21",
+      "data_criacao": "2026-02-18",
+      "horario_inicio": "12:00",
+      "horario_fim": "13:00",
+      "descricao": "",
       "tipo": "SEMANAIS"
+    },
+    {
+      "id": 20,
+      "titulo": "Maria",
+      "status": "Concluída",
+      "xp": 5,
+      "categoria": null,
+      "prazo": "2026-02-18",
+      "data_criacao": "2026-02-18",
+      "horario_inicio": "12:00",
+      "horario_fim": "14:00",
+      "descricao": "",
+      "tipo": "DIÁRIAS"
     }
   ]
 }

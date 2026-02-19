@@ -1,6 +1,9 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from datetime import datetime
 from data_manager import load_focus_history, save_focus_history, load_missions
+from PySide6.QtMultimedia import QSoundEffect
+from PySide6.QtCore import QUrl
+
 
 class FocusScreen(QtWidgets.QWidget):
     time_updated = QtCore.Signal(str)
@@ -16,6 +19,18 @@ class FocusScreen(QtWidgets.QWidget):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
         
+        self.finish_sound = QSoundEffect(self)
+        self.finish_sound.setSource(QUrl.fromLocalFile("audio/focus_done.wav"))
+        self.finish_sound.setVolume(0.5)
+
+        self.ui_on_sound = QSoundEffect(self)
+        self.ui_on_sound.setSource(QUrl.fromLocalFile("audio/ui-on.wav"))
+        self.ui_on_sound.setVolume(0.25)
+
+        self.ui_off_sound = QSoundEffect(self)
+        self.ui_off_sound.setSource(QUrl.fromLocalFile("audio/ui-off.wav"))
+        self.ui_off_sound.setVolume(0.5)
+
         self.current_mission_id = None
 
         self.build_ui()
@@ -154,6 +169,12 @@ class FocusScreen(QtWidgets.QWidget):
         layout.addWidget(suggested); layout.addLayout(c_layout)
         return self.time_selector
 
+    def play_ui_on(self):
+        self.ui_on_sound.play()
+    
+    def play_ui_off(self):
+        self.ui_off_sound.play()
+
     def build_timer_card(self):
         container = QtWidgets.QFrame()
         container.setObjectName("TimerCard")
@@ -180,14 +201,18 @@ class FocusScreen(QtWidgets.QWidget):
         self.btn_reset.setStyleSheet("height: 48px;")
 
         self.btn_toggle.clicked.connect(self.toggle_timer)
+        self.btn_toggle.clicked.connect(self.play_ui_off)
+
         self.btn_reset.clicked.connect(self.stop_timer)
+        self.btn_reset.clicked.connect(self.play_ui_on)
+
         self.btn_finish.clicked.connect(self.finish_session)
+
 
         btn_layout.addWidget(self.btn_toggle, 2)
         btn_layout.addWidget(self.btn_reset, 1)
         btn_layout.addWidget(self.btn_finish, 1)
 
-        # Seletor de Missão (Substituindo o label estático)
         self.btn_mission_selector = QtWidgets.QPushButton("ASSOCIAR MISSÃO")
         self.btn_mission_selector.setCursor(QtCore.Qt.PointingHandCursor)
         self.btn_mission_selector.setStyleSheet("""
@@ -365,13 +390,12 @@ class FocusScreen(QtWidgets.QWidget):
             data = load_focus_history()
             if day_key not in data: data[day_key] = {"total_seconds": 0, "sessions": []}
             
-            # Salva o ID da missão atual na sessão
             session = {
                 "mode": self.mode, 
                 "start": self.start_time.isoformat(), 
                 "end": end_time.isoformat(), 
                 "elapsed": elapsed, 
-                "mission_id": self.current_mission_id # ID salvo aqui
+                "mission_id": self.current_mission_id 
             }
             
             data[day_key]["sessions"].append(session)
@@ -380,6 +404,8 @@ class FocusScreen(QtWidgets.QWidget):
             
             self.add_to_history(self.start_time, end_time, elapsed, mission_id=self.current_mission_id)
         
+        self.finish_sound.play()
+
         self.foco_finalizado.emit()
         self.stop_timer()
 
