@@ -5,7 +5,6 @@ from widgets.note_card import NoteCard
 from data_manager import load_notes, save_notes
 from widgets.note_modal import NoteModal
 
-
 class NotesScreen(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
@@ -34,8 +33,7 @@ class NotesScreen(QtWidgets.QWidget):
         title_container.addWidget(title)
         title_container.addWidget(underline)
 
-        # ---------- BOTÃO ADICIONAR (REESTILIZADO) ----------
-        self.btn_add = RotatableButton("+") # Use apenas o símbolo
+        self.btn_add = RotatableButton("+")
         self.btn_add.setFixedSize(55, 55)
         self.btn_add.setCursor(QtCore.Qt.PointingHandCursor)
         self.btn_add.clicked.connect(self.toggle_add)
@@ -51,15 +49,7 @@ class NotesScreen(QtWidgets.QWidget):
                 padding-bottom: 5px;
             }
             QPushButton:hover {
-                background: qlineargradient(
-                    x1:0, y1:0, x2:1, y2:1,
-                    stop:0 #9A5CFF,
-                    stop:1 #7B2FF7
-                );
-            }
-            QPushButton:pressed {
-                background: #4A0EC7;
-                padding-top: 2px; /* Efeito de clique */
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #9A5CFF, stop:1 #7B2FF7);
             }
         """)
 
@@ -69,40 +59,7 @@ class NotesScreen(QtWidgets.QWidget):
 
         self.layout.addWidget(header_widget)
 
-        self.input_container = QtWidgets.QWidget()
-        input_layout = QtWidgets.QVBoxLayout(self.input_container)
-        input_layout.setSpacing(10)
-
-        self.input_title = QtWidgets.QLineEdit()
-        self.input_title.setPlaceholderText("Note title...")
-        self.input_title.setFixedHeight(40)
-        self.input_title.setStyleSheet("background:#1b1430; border:1px solid #5E12F8; border-radius:8px; padding:0 10px; color:white;")
-
-        self.input_text = QtWidgets.QTextEdit()
-        self.input_text.setPlaceholderText("Write your note here...")
-        self.input_text.setFixedHeight(100)
-        self.input_text.setStyleSheet("background:#1b1430; border:1px solid #5E12F8; border-radius:8px; padding:10px; color:white;")
-
-        self.btn_save = QtWidgets.QPushButton("Save Note")
-        self.btn_save.setFixedHeight(40)
-        self.btn_save.setStyleSheet("""
-            QPushButton {
-                background-color: #5E12F8;
-                color: white;
-                border-radius: 8px;
-                font-weight: bold;
-            }
-        """)
-        self.btn_save.clicked.connect(self.create_note)
-
-        input_layout.addWidget(self.input_title)
-        input_layout.addWidget(self.input_text)
-        input_layout.addWidget(self.btn_save)
-
-        self.input_container.hide()
-        self.layout.addWidget(self.input_container)
-
-        # ---------- NOTES LIST ----------
+        # ---------- LISTA DE NOTAS COM SCROLL ----------
         self.notes_container = QtWidgets.QVBoxLayout()
         self.notes_container.setAlignment(QtCore.Qt.AlignTop)
         self.notes_container.setSpacing(12)
@@ -122,83 +79,64 @@ class NotesScreen(QtWidgets.QWidget):
         self.load_all()
 
     def load_all(self):
+        # Limpa o container
         while self.notes_container.count():
-            w = self.notes_container.takeAt(0).widget()
-            if w:
-                w.deleteLater()
+            item = self.notes_container.takeAt(0)
+            w = item.widget()
+            if w: w.deleteLater()
 
         data = load_notes()
         notes = data.get("notes", [])
 
-        for n in reversed(notes):
-            card = NoteCard(n["id"], n["title"], n["text"])
+        # ORDENAÇÃO: 1º Pinned (True/False), 2º ID (Maior primeiro)
+        sorted_notes = sorted(
+            notes, 
+            key=lambda x: (x.get("pinned", False), x.get("id", 0)), 
+            reverse=True
+        )
+
+        for n in sorted_notes:
+            # Passamos ID, Título, Texto, Cor e se está Pinned
+            card = NoteCard(
+                n["id"], 
+                n["title"], 
+                n["text"], 
+                n.get("color", "#1e1b2e"), 
+                n.get("pinned", False)
+            )
             card.clicked.connect(lambda c, note=n: self.open_note(note))
+            card.pin_toggled.connect(self.toggle_pin_status)
             self.notes_container.addWidget(card)
 
-    def create_note(self):
-        title = self.input_title.text().strip()
-        text = self.input_text.toPlainText().strip()
-
-        if not title:
-            return
-
+    def toggle_pin_status(self, note_id, status):
         data = load_notes()
-        today = datetime.datetime.now().isoformat()
-
-        new_note = {
-            "id": max([n["id"] for n in data["notes"]] + [0]) + 1,
-            "title": title,
-            "text": text,
-            "created_at": today
-        }
-
-        data["notes"].append(new_note)
+        for n in data["notes"]:
+            if n["id"] == note_id:
+                n["pinned"] = status
+                break
         save_notes(data)
-
-        self.input_title.clear()
-        self.input_text.clear()
-        self.toggle_add()
         self.load_all()
-
-    def toggle_add(self):
-
-        # Se já existe overlay, significa que está aberto → fechar
-        if self.overlay:
-            self.overlay.deleteLater()
-            self.overlay = None
-
-            self.anim.setDuration(220)
-            self.anim.setStartValue(45)
-            self.anim.setEndValue(0)
-            self.anim.start()
-
-            self.btn_add.setText("+")
-            return
-
-        # Se não está aberto → abrir
-        self.anim.setDuration(220)
-        self.anim.setStartValue(0)
-        self.anim.setEndValue(45)
-        self.anim.start()
-
-        self.btn_add.setText("×")
-        self.show_modal()
-
-
-    def open_new_note(self):
-        self.show_modal()
 
     def open_note(self, note_data):
         self.show_modal(note_data)
 
-    def show_modal(self, note_data=None):
+    def toggle_add(self):
+        if self.overlay:
+            self.close_modal()
+            return
 
+        self.anim.setDuration(220)
+        self.anim.setStartValue(0)
+        self.anim.setEndValue(45)
+        self.anim.start()
+        self.btn_add.setText("×")
+        self.show_modal()
+
+    def show_modal(self, note_data=None):
         self.overlay = QtWidgets.QWidget(self)
         self.overlay.setGeometry(self.rect())
         self.overlay.setStyleSheet("background-color: rgba(0, 0, 0, 180);")
-        self.overlay.destroyed.connect(self._clear_overlay_reference)
-
-
+        
         self.modal = NoteModal(note_data, parent=self.overlay)
         self.modal.setFixedSize(500, 600)
 
@@ -210,22 +148,12 @@ class NotesScreen(QtWidgets.QWidget):
         self.modal.note_saved.connect(self.close_modal)
 
         def click_outside(event):
-            if not self.modal:
-                return
-
-            modal_rect = self.modal.geometry()
-            self.btn_add.setText("+")
-
-            if not modal_rect.contains(event.pos()):
+            if not self.modal: return
+            if not self.modal.geometry().contains(event.pos()):
                 self.modal.process_save(close_after=True)
 
-
         self.overlay.mousePressEvent = click_outside
-
         self.overlay.show()
-
-    def _clear_overlay_reference(self):
-            self.overlay = None
 
     def close_modal(self):
         if self.overlay:
@@ -236,8 +164,4 @@ class NotesScreen(QtWidgets.QWidget):
         self.anim.setStartValue(45)
         self.anim.setEndValue(0)
         self.anim.start()
-
         self.btn_add.setText("+")
-
-
-    

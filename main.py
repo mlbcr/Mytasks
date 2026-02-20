@@ -69,8 +69,8 @@ class SideMenu(QtWidgets.QFrame):
 
         menu_items = [
             ("INÍCIO", "images/icons/home.png", 0),
-            ("PLANNER", "images/icons/planner.png", 1),
-            ("MISSÕES", "images/icons/missions.png", 2),
+            ("MISSÕES", "images/icons/missions.png", 1),
+            ("PLANNER", "images/icons/planner.png", 2),
             ("FOCO", "images/icons/focus.png", 3),
             ("ANOTAÇÕES", "images/icons/notes.png", 4),
             ("CONFIGURAÇÕES", "images/icons/settings.png", 5),
@@ -84,7 +84,7 @@ class SideMenu(QtWidgets.QFrame):
 
             icon = QtGui.QIcon(resource_path(icon_path))
             btn.setIcon(icon)
-            btn.setIconSize(QtCore.QSize(20, 20))
+            btn.setIconSize(QtCore.QSize(18, 18))
 
             btn.clicked.connect(lambda _, x=index: self.clicked.emit(x))
 
@@ -138,8 +138,8 @@ class MainWindow(QtWidgets.QWidget):
         self.stack = QtWidgets.QStackedWidget()
         self.stack.addWidget(self.screen_name)    
         self.stack.addWidget(self.screen_home) 
-        self.stack.addWidget(self.screen_planner)
         self.stack.addWidget(self.screen_missions) 
+        self.stack.addWidget(self.screen_planner)
         self.stack.addWidget(self.screen_focus)    
         self.stack.addWidget(self.screen_notes)
         self.stack.addWidget(self.screen_config)
