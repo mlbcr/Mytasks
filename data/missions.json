@@ -8,15 +8,24 @@
       "xp": 10,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
-      "prazo": "2026-02-19",
+      "prazo": "2026-02-21",
       "tipo": "DIÁRIAS",
       "horario_inicio": "09:00",
-      "horario_fim": "10:00"
+      "horario_fim": "10:00",
+      "repetida": [
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "id": 2,
       "titulo": "Dia a dia feliz",
-      "descricao": "Fazer a missão muito bem nossa que legal essa missão ",
+      "descricao": "Fazer a missão muito bem nossa que legal essa missão eaiiiii",
       "status": "Pendente",
       "xp": 2,
       "categoria": "VITALIDADE",
@@ -24,14 +33,23 @@
       "prazo": "2026-02-19",
       "tipo": "DIÁRIAS",
       "horario_inicio": "14:00",
-      "horario_fim": "15:00"
+      "horario_fim": "15:00",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "id": 5,
       "titulo": "Aaa",
       "status": "Pendente",
       "xp": 12,
-      "prazo": "2026-02-19",
+      "prazo": "2026-02-20",
       "data_criacao": "2026-02-08",
       "categoria": "VITALIDADE",
       "descricao": "",
@@ -161,26 +179,44 @@
       "titulo": "oier",
       "status": "Pendente",
       "xp": 5,
-      "categoria": null,
+      "categoria": "FORÇA",
       "prazo": "2026-02-19",
       "data_criacao": "2026-02-18",
       "horario_inicio": "12:00",
       "horario_fim": "12:00",
       "descricao": "",
-      "tipo": "DIÁRIAS"
+      "tipo": "DIÁRIAS",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "id": 19,
       "titulo": "agara",
       "status": "Pendente",
       "xp": 5,
-      "categoria": "",
+      "categoria": "VITALIDADE",
       "prazo": "2026-02-21",
       "data_criacao": "2026-02-18",
       "horario_inicio": "12:00",
       "horario_fim": "13:00",
-      "descricao": "",
-      "tipo": "SEMANAIS"
+      "descricao": "xeeee",
+      "tipo": "SEMANAIS",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ]
     },
     {
       "id": 20,
@@ -193,6 +229,50 @@
       "horario_inicio": "12:00",
       "horario_fim": "14:00",
       "descricao": "",
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 21,
+      "titulo": "aaaaa",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "FORÇA",
+      "prazo": "2026-02-20",
+      "data_criacao": "2026-02-20",
+      "horario_inicio": "08:00",
+      "horario_fim": "08:20",
+      "descricao": "",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 22,
+      "titulo": "bbbbb",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "VITALIDADE",
+      "prazo": "2026-02-19",
+      "data_criacao": "2026-02-20",
+      "horario_inicio": "08:20",
+      "horario_fim": "09:00",
+      "descricao": "",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
       "tipo": "DIÁRIAS"
     }
   ]

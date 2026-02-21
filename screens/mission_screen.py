@@ -9,6 +9,16 @@ from widgets.custom_button import RotatableButton
 from data_manager import load_user, save_user
 from progression import add_xp_to_user
 
+import sys
+import os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 def end_of_day():
     return datetime.date.today()
 
@@ -35,11 +45,19 @@ class MissionScreen(QtWidgets.QWidget):
         self.layout.setSpacing(25)
         
         self.finished_mission_sound = QSoundEffect(self)
-        self.finished_mission_sound.setSource(QUrl.fromLocalFile("audio/complete.wav"))
+        sound_path = resource_path("audio/complete.wav")
+
+        self.finished_mission_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
         self.finished_mission_sound.setVolume(0.5)
 
+        sound_path = resource_path("audio/incomplete.wav")
         self.unfinished_mission_sound = QSoundEffect(self)
-        self.unfinished_mission_sound.setSource(QUrl.fromLocalFile("audio/incomplete.wav"))
+
+        self.unfinished_mission_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
         self.unfinished_mission_sound.setVolume(0.3)
 
         header_widget = QtWidgets.QWidget()
@@ -121,6 +139,20 @@ class MissionScreen(QtWidgets.QWidget):
         self.anim = QtCore.QPropertyAnimation(self.btn_add, b"rotation", self)
         self.load_all()
 
+    def get_type_by_date(self, target_date):
+        """Helper para definir a aba correta baseada na data."""
+        today = datetime.date.today()
+        end_week = end_of_week()
+        end_month = end_of_month()
+
+        if target_date <= today:
+            return "DIÁRIAS"
+        elif target_date <= end_week:
+            return "SEMANAIS"
+        elif target_date <= end_month:
+            return "MENSAIS"
+        return "MENSAIS"
+
     def build_tabs(self):
         container = QtWidgets.QFrame()
         container.setFixedHeight(45)
@@ -188,110 +220,112 @@ class MissionScreen(QtWidgets.QWidget):
 
     def migrate_late_to_daily(self, missions):
         today = datetime.date.today()
+
         for m in missions:
-            if m.get("status") not in ["Concluída", "deleted"]:
-                prazo_iso = m.get("prazo")
-                if not prazo_iso:
-                    continue
+            if m.get("status") in ["Concluída", "deleted"]:
+                continue
+
+            prazo_iso = m.get("prazo")
+            if not prazo_iso:
+                continue
+
+            prazo = datetime.date.fromisoformat(prazo_iso)
+
+            # apenas atualiza a aba
+            if prazo <= today:
+                m["tipo"] = "DIÁRIAS"
+            else:
+                m["tipo"] = self.get_type_by_date(prazo)
+
+    def check_repetitions(self, missions):
+        """Verifica se missões concluídas ou atrasadas com repetição devem ser resetadas para hoje."""
+        today = datetime.date.today()
+        today_weekday = today.weekday() 
+        
+        changed = False
+        for m in missions:
+            if m.get("status") != "deleted" and any(m.get("repetida", [])):
+                prazo_str = m.get("prazo")
+                if not prazo_str: continue
                 
-                prazo = datetime.date.fromisoformat(prazo_iso)
+                prazo_date = datetime.date.fromisoformat(prazo_str)
                 
-                if prazo <= today:
-                    m["tipo"] = "DIÁRIAS"
-                    m["prazo"] = today.isoformat()
+                if prazo_date < today or (prazo_date == today and m["status"] == "Concluída"):
+                    if m["repetida"][today_weekday]:
+                        m["status"] = "Pendente"
+                        m["prazo"] = today.isoformat()
+                        changed = True
+        return changed
 
     def load_all(self):
         while self.missions_container.count():
-            w = self.missions_container.takeAt(0).widget()
-            if w:
-                w.deleteLater()
+            item = self.missions_container.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
 
         data = load_missions()
         all_missions = data.get("missions", [])
         
+        rep_updated = self.check_repetitions(all_missions)
+        
         self.migrate_late_to_daily(all_missions)
-        save_missions_to_file(data)
+        
+        if rep_updated:
+            save_missions_to_file(data)
 
         today = datetime.date.today()
-        end_week = end_of_week()
-        end_month = end_of_month()
-
-        active = []
-        late = []
-        done = []
+        active, late, done = [], [], []
 
         for m in all_missions:
-            if m.get("status") == "deleted":
-                continue
+            if m.get("status") == "deleted": continue
+            
             tipo = m.get("tipo", "DIÁRIAS")
-            prazo = datetime.date.fromisoformat(m["prazo"]) if m.get("prazo") else None
+            prazo_str = m.get("prazo")
+            prazo = datetime.date.fromisoformat(prazo_str) if prazo_str else None
 
             if tipo != self.current_filter:
                 continue
 
-            valid = False
-
-            if tipo == "DIÁRIAS":
-                if prazo == today or prazo < today:
-                    valid = True
-
-            elif tipo == "SEMANAIS":
-                if prazo <= end_week:
-                    valid = True
-
-            elif tipo == "MENSAIS":
-                if prazo <= end_month:
-                    valid = True
-
-            if not valid:
-                continue
-
-            if m["status"] == "Concluída":
+            if m.get("status") == "Concluída":
                 done.append(m)
-            elif m["status"] != "Concluída" and self.is_late(m.get("prazo")):
-                m["status"] = "Atrasada"
+            elif prazo and prazo < today:
+                m["status_visual"] = "Atrasada" 
                 late.append(m)
             else:
+                m["status_visual"] = "Pendente"
                 active.append(m)
 
         def render(m):
             card = MissionCard(
-                m["id"],
-                m["titulo"],
-                m["status"],
+                m["id"], 
+                m["titulo"], 
+                m.get("status_visual", m.get("status")),
                 m.get("xp", 10),
-                m.get("descricao"),
-                m.get("categoria"),
-                m.get("prazo")
+                m.get("descricao"), 
+                m.get("categoria"), 
+                m.get("prazo"),
+                m.get("repetida") 
             )
             card.clicked.connect(self.edit)
             card.status_changed.connect(self.sync)
             main_window = self.window()
-            card.associate_requested.connect(main_window.set_focus_mission)
-
+            if hasattr(main_window, 'set_focus_mission'):
+                card.associate_requested.connect(main_window.set_focus_mission)
             self.missions_container.addWidget(card)
 
         if active:
             self.add_section_title("ATIVAS")
-            for m in active:
-                render(m)
+            for m in active: render(m)
 
         if late:
             self.add_section_title("ATRASADAS")
-            for m in late:
-                render(m)
+            for m in late: render(m)
 
         if done:
             self.add_section_title("CONCLUÍDAS")
-            for m in done:
-                render(m)
+            for m in done: render(m)
 
-        if not (late or active or done):
-            self.status_footer.setText("Nenhuma missão restante.")
-            self.status_footer.show()
-        else:
-            self.status_footer.hide()
-
+        self.status_footer.setVisible(not (late or active or done))
 
     def create_mission(self):
         title = self.input_new.text().strip()
@@ -300,14 +334,10 @@ class MissionScreen(QtWidgets.QWidget):
         data = load_missions()
         today = datetime.date.today()
 
-        if self.current_filter == "DIÁRIAS":
-            prazo = end_of_day()
-        elif self.current_filter == "SEMANAIS":
-            prazo = end_of_week()
-        elif self.current_filter == "MENSAIS":
-            prazo = end_of_month()
-        else:
-            prazo = today
+        if self.current_filter == "DIÁRIAS": prazo = end_of_day()
+        elif self.current_filter == "SEMANAIS": prazo = end_of_week()
+        elif self.current_filter == "MENSAIS": prazo = end_of_month()
+        else: prazo = today
 
         new_m = {
             "id": max([m["id"] for m in data["missions"]] + [0]) + 1,
@@ -318,9 +348,10 @@ class MissionScreen(QtWidgets.QWidget):
             "prazo": prazo.isoformat(),
             "data_criacao": today.isoformat(),
             "horario_inicio": None,
-            "horario_fim": None,
+            "horario_fim": None, 
             "descricao": "",
-            "tipo": self.current_filter
+            "repetida": [False] * 7,
+            "tipo": self.current_filter 
         }
 
         data["missions"].append(new_m)

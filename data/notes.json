@@ -5,7 +5,7 @@
             "title": "Plano de Exercício",
             "text": "- 30 agachamentos\n- 30 polichinelos\n- 30 seg prancha",
             "created_at": "2026-02-12T23:10:33.190398",
-            "color": "#3d2e1c",
+            "color": "#2e1c3d",
             "pinned": false
         },
         {
@@ -13,14 +13,14 @@
             "title": "oiiiiiiiiii",
             "text": "ooiiii\nvava\nereroi\naaaaa\n\n\noioioi",
             "created_at": "2026-02-12T23:14:32.643123",
-            "color": "#1e1b2e",
+            "color": "#1b1430",
             "pinned": true
         },
         {
             "id": 4,
             "title": "tete",
             "text": "aaaaaaaaaaaaaaa",
-            "color": "#1e1b2e",
+            "color": "#3d1c1c",
             "created_at": "2026-02-19T21:11:55.867808",
             "pinned": true
         },
@@ -28,7 +28,7 @@
             "id": 5,
             "title": "aaaaaaa",
             "text": "aaa",
-            "color": "#2e1c3d",
+            "color": "#1b1430",
             "created_at": "2026-02-19T21:18:48.271979",
             "pinned": false
         }

@@ -52,8 +52,7 @@ class NoteModal(QtWidgets.QWidget):
         super().__init__(parent)
         self.note_data = note_data
         
-        # PALETA DARK DESATURADA
-        self.dark_palette = ["#1e1b2e", "#3d1c1c", "#1c3d26", "#1c2a3d", "#3d2e1c", "#2e1c3d"]
+        self.dark_palette = ["#1b1430", "#3d1c1c", "#1c3d26", "#1c2a3d", "#3d2e1c", "#2e1c3d"]
         
         self.current_color = note_data.get("color", self.dark_palette[0]) if note_data else self.dark_palette[0]
         self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
@@ -66,7 +65,6 @@ class NoteModal(QtWidgets.QWidget):
         color_group = QtWidgets.QHBoxLayout()
         color_group.setSpacing(12)
         
-        # Criamos os botões de cores sem bordas padrão
         for color in self.dark_palette:
             btn = QtWidgets.QPushButton()
             btn.setFixedSize(22, 22)

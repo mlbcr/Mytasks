@@ -226,5 +226,17 @@
         "mission_id": null
       }
     ]
+  },
+  "2026-02-20": {
+    "total_seconds": 1,
+    "sessions": [
+      {
+        "mode": "TIMER",
+        "start": "2026-02-20T18:53:15.907509",
+        "end": "2026-02-20T18:53:17.017279",
+        "elapsed": 1,
+        "mission_id": null
+      }
+    ]
   }
 }

@@ -3,7 +3,15 @@ from datetime import datetime
 from data_manager import load_focus_history, save_focus_history, load_missions
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtCore import QUrl
+import sys
+import os
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 class FocusScreen(QtWidgets.QWidget):
     time_updated = QtCore.Signal(str)
@@ -19,16 +27,26 @@ class FocusScreen(QtWidgets.QWidget):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
         
+        sound_path = resource_path("audio/focus_done.wav")
         self.finish_sound = QSoundEffect(self)
-        self.finish_sound.setSource(QUrl.fromLocalFile("audio/focus_done.wav"))
+
+        self.finish_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
         self.finish_sound.setVolume(0.5)
 
+        sound_path = resource_path("audio/ui-on.wav")
         self.ui_on_sound = QSoundEffect(self)
-        self.ui_on_sound.setSource(QUrl.fromLocalFile("audio/ui-on.wav"))
+        self.ui_on_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
         self.ui_on_sound.setVolume(0.25)
 
+        sound_path = resource_path("audio/ui-off.wav")
         self.ui_off_sound = QSoundEffect(self)
-        self.ui_off_sound.setSource(QUrl.fromLocalFile("audio/ui-off.wav"))
+        self.ui_off_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
         self.ui_off_sound.setVolume(0.5)
 
         self.current_mission_id = None

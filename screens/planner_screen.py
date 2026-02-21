@@ -2,9 +2,8 @@ from PySide6 import QtCore, QtWidgets, QtGui
 import datetime
 from data_manager import load_missions, resource_path, save_missions_to_file
 
-# Configurações de UI
-PX_PER_HOUR = 100
-MARGIN_LEFT = 75
+PX_PER_HOUR = 160
+MARGIN_LEFT = 100
 TIMELINE_PADDING = 40
 
 CATEGORY_COLORS = {
@@ -19,16 +18,14 @@ CATEGORY_COLORS = {
 def time_to_pixels(time_str):
     try:
         h, m = map(int, time_str.split(':'))
-        # Soma o padding ao cálculo para dar o respiro no topo
         return (h * PX_PER_HOUR) + (m * (PX_PER_HOUR / 60)) + TIMELINE_PADDING
     except: return TIMELINE_PADDING
 
 def duration_to_pixels(start, end):
     y_start = time_to_pixels(start)
     y_end = time_to_pixels(end)
-    return max(y_end - y_start, 60)
+    return y_end - y_start
 
-# --- COMPONENTES AUXILIARES ---
 class MissionItemWidget(QtWidgets.QWidget):
     def __init__(self, titulo, descricao, xp, categoria):
         super().__init__()
@@ -305,6 +302,7 @@ class MissionDetailsOverlay(QtWidgets.QFrame):
         cat_badge.setFixedWidth(cat_badge.sizeHint().width() + 20)
         
         title_lbl = QtWidgets.QLabel(mission['titulo'])
+        title_lbl.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         title_lbl.setStyleSheet("font-size: 26px; font-weight: 800; color: white; margin-top: 10px;")
         title_lbl.setWordWrap(True)
         
@@ -397,85 +395,75 @@ class PlannerCard(QtWidgets.QFrame):
         self.mission_data = m
         is_done = m['status'] == "Concluída"
         
-        # Cores e Status
         cat_raw = m.get('categoria')
         cat_upper = cat_raw.upper() if cat_raw else "DEFAULT"
         cor_base = CATEGORY_COLORS.get(cat_upper, CATEGORY_COLORS["DEFAULT"])
         bg_color = "#1b1430" if not is_done else "#120e1f"
         accent_color = cor_base if not is_done else "#4a4a4a"
         
-        # Geometria
         start, end = m['horario_inicio'], m['horario_fim']
-        y, h = time_to_pixels(start), duration_to_pixels(start, end)
+        y = time_to_pixels(start)
+        h_real = duration_to_pixels(start, end)
         
-        # RESOLUÇÃO: Garantir altura mínima para o texto não sumir
-        h = max(h, 45) 
+        h_visual = max(h_real, 60) 
         
         available_width = parent.width() - MARGIN_LEFT - 30
-        self.setGeometry(MARGIN_LEFT + (available_width * x_offset) / 100, y, (available_width * width_percent) / 100, h)
+        self.setGeometry(MARGIN_LEFT + (available_width * x_offset) / 100, y, (available_width * width_percent) / 100, h_visual)
 
         self.setStyleSheet(f"""
             QFrame#Card {{
                 background-color: {bg_color};
-                border-left: 4px solid {accent_color};
-                border-radius: 8px;
+                border-left: 5px solid {accent_color};
+                border-radius: 10px;
             }}
         """)
         self.setObjectName("Card")
         self.setCursor(QtCore.Qt.PointingHandCursor)
 
-        # Layout Principal Vertical
         main_layout = QtWidgets.QVBoxLayout(self)
-        
-        # RESOLUÇÃO: Reduzir margens em cards pequenos para ganhar espaço
-        margins = 4 if h < 60 else 8
-        main_layout.setContentsMargins(10, margins, 10, margins)
-        main_layout.setSpacing(2)
+        main_layout.setContentsMargins(12, 5, 12, 5)
+        main_layout.setSpacing(3)
 
-        # 1. Header (Horário + XP/Check)
-        header_layout = QtWidgets.QHBoxLayout()
-        
-        # RESOLUÇÃO: Fonte maior e visível
-        time_lbl = QtWidgets.QLabel(f"{start} - {end}")
-        time_lbl.setStyleSheet(f"""
-            color: {accent_color}; 
-            font-size: 11px; 
-            font-weight: 900; 
-            background: transparent;
-        """)
-        header_layout.addWidget(time_lbl)
-        header_layout.addStretch()
-
-        if is_done:
-            status_lbl = QtWidgets.QLabel("✔")
-            status_lbl.setStyleSheet("color: #00ff88; font-size: 12px; font-weight: bold;")
-            header_layout.addWidget(status_lbl)
-        else:
-            # Badge de XP mais compacto para não empurrar o texto
-            xp_lbl = QtWidgets.QLabel(f"{m.get('xp', 0)} XP")
-            xp_lbl.setStyleSheet(f"color: {accent_color}; font-size: 9px; font-weight: 800; opacity: 0.8;")
-            header_layout.addWidget(xp_lbl)
+        if h_visual < 80:
+            row_layout = QtWidgets.QHBoxLayout()
+            row_layout.setSpacing(10)
             
-        main_layout.addLayout(header_layout)
+            time_lbl = QtWidgets.QLabel(f"{start}-{end}")
+            time_lbl.setStyleSheet(f"color: {accent_color}; font-size: 14px; font-weight: 900;")
+            time_lbl.setAttribute(QtCore.Qt.WA_TranslucentBackground)
 
-        # 2. Título (Só aparece se houver espaço suficiente)
-        if h >= 55:
+            title_lbl = QtWidgets.QLabel(m['titulo'])
+            title_lbl.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+            title_lbl.setStyleSheet("color: white; font-size: 15px; font-weight: 700;")
+            
+            row_layout.addWidget(time_lbl)
+            row_layout.addWidget(title_lbl, 1)
+            main_layout.addLayout(row_layout)
+        else:
+            time_lbl = QtWidgets.QLabel(f"{start} — {end}")
+            time_lbl.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+            time_lbl.setStyleSheet(f"""
+                color: {accent_color}; 
+                font-size: 14px; 
+                font-weight: 900; 
+                letter-spacing: 1px;
+                padding: 2px 5px; 
+                border-radius: 4px;
+            """)
+            main_layout.addWidget(time_lbl)
+
             titulo_lbl = QtWidgets.QLabel(m['titulo'])
             titulo_lbl.setWordWrap(True)
+            decoration = "text-decoration: line-through;" if is_done else ""
             titulo_lbl.setStyleSheet(f"""
-                color: {'#6a6a6a' if is_done else 'white'}; 
-                font-size: 12px; 
-                font-weight: 600;
-                { 'text-decoration: line-through;' if is_done else '' }
+                color: {'#8a8a8a' if is_done else 'white'}; 
+                font-size: 14px; 
+                font-weight: 700;
+                line-height: 1.2;
+                {decoration}
             """)
             main_layout.addWidget(titulo_lbl)
             main_layout.addStretch()
-        else:
-            time_lbl.setText(f"{start} | {m['titulo'][:15]}...")
-
-    def hex_to_rgb(self, hex_color):
-        hex_color = hex_color.lstrip('#')
-        return f"{int(hex_color[0:2], 16)}, {int(hex_color[2:4], 16)}, {int(hex_color[4:6], 16)}"
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton:
@@ -507,7 +495,6 @@ class DaySelectorWidget(QtWidgets.QWidget):
         btn.setFixedSize(55, 70)
         btn.setCursor(QtCore.Qt.PointingHandCursor)
         
-        # Nome do dia e número
         dias_semana = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"]
         texto = f"{dias_semana[date.weekday()]}\n{date.day}"
         btn.setText(texto)
@@ -539,8 +526,6 @@ class DaySelectorWidget(QtWidgets.QWidget):
                     QPushButton:hover { color: white; background: #251b3d; }
                 """)
 
-# --- TELA PRINCIPAL ---
-
 class PlannerScreen(QtWidgets.QWidget):
     planner_updated = QtCore.Signal()
 
@@ -553,18 +538,15 @@ class PlannerScreen(QtWidgets.QWidget):
         self.main_layout.setContentsMargins(0, 10, 0, 0)
         self.main_layout.setSpacing(10)
 
-        # Título
         title = QtWidgets.QLabel("PLANNER")
         title.setAlignment(QtCore.Qt.AlignCenter)
         title.setStyleSheet("color: white; font-weight: 800; font-size: 18px; letter-spacing: 2px;")
         self.main_layout.addWidget(title)
 
-        # Seletor de Dias (Conectando o clique à mudança de data)
         self.day_selector = DaySelectorWidget()
         self.day_selector.day_selected.connect(self.change_date)
         self.main_layout.addWidget(self.day_selector)
 
-        # Botão Adicionar
         self.btn_add = QtWidgets.QPushButton("+ Adicionar Missão")
         self.btn_add.setFixedHeight(50)
         self.btn_add.setStyleSheet("background: #5E12F8; color: white; border-radius: 15px; font-weight: bold; margin: 0 30px;")
@@ -577,10 +559,9 @@ class PlannerScreen(QtWidgets.QWidget):
     def change_date(self, date):
         """Método chamado sempre que você clica em um dia no seletor"""
         self.current_date = date
-        self.load_all() # Recarrega as missões para a nova data
+        self.load_all() 
 
     def setup_timeline(self):
-        # (Seu código de setup_timeline permanece igual...)
         self.scroll = QtWidgets.QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setStyleSheet("background: transparent; border: none;")
@@ -596,26 +577,29 @@ class PlannerScreen(QtWidgets.QWidget):
             line.setStyleSheet("background-color: #2d234a;")
             
             lbl = QtWidgets.QLabel(f"{h:02d}:00", self.timeline_container)
-            lbl.setGeometry(15, y_pos - 10, 50, 20)
-            lbl.setStyleSheet("color: #6a6a6a; font-size: 11px; background: transparent; border: none;")
+            lbl.setGeometry(10, y_pos - 12, 80, 25) 
+            lbl.setStyleSheet("""
+                color: #8a8a8a; 
+                font-size: 14px; 
+                font-weight: 800; 
+                background: transparent; 
+                border: none;
+            """)
 
         self.scroll.setWidget(self.timeline_container)
         self.main_layout.addWidget(self.scroll)
 
     def load_all(self):
         """Lógica de carregamento filtrada estritamente pela data selecionada"""
-        # 1. Limpa os cards existentes
         for child in self.timeline_container.findChildren(PlannerCard): 
             child.deleteLater()
             
         data = load_missions()
-        # A data que você clicou lá no topo (objeto datetime.date)
         data_selecionada = self.current_date 
         
         missions_filtered = []
 
         for m in data.get("missions", []):
-            # Ignora deletados ou sem horário
             if m.get("status") == "deleted" or not m.get("horario_inicio"):
                 continue
 
@@ -623,18 +607,13 @@ class PlannerScreen(QtWidgets.QWidget):
             if not prazo:
                 continue
             
-            # Converte o prazo da missão para comparação
             prazo_missao = datetime.date.fromisoformat(prazo)
 
-            # --- A REGRA DE OURO ---
-            # Só entra se o prazo for EXATAMENTE igual ao dia que você selecionou
             if prazo_missao == data_selecionada:
                 missions_filtered.append(m)
 
-        # Ordenar por horário de início para o layout não quebrar
         missions_filtered.sort(key=lambda x: x['horario_inicio'])
 
-        # 3. Organização de grupos (sobreposição visual)
         groups = []
         for m in missions_filtered:
             placed = False
@@ -656,8 +635,11 @@ class PlannerScreen(QtWidgets.QWidget):
                 card.show()
 
     def check_overlap(self, m1, m2):
+        # Adicionamos uma margem de segurança de 1 pixel
         s1, e1 = time_to_pixels(m1['horario_inicio']), time_to_pixels(m1['horario_fim'])
         s2, e2 = time_to_pixels(m2['horario_inicio']), time_to_pixels(m2['horario_fim'])
+        
+        # Retorna True se houver colisão de horários
         return s1 < e2 and s2 < e1
 
     def open_add_modal(self):

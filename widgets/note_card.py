@@ -4,7 +4,7 @@ class NoteCard(QtWidgets.QFrame):
     clicked = QtCore.Signal(object)
     pin_toggled = QtCore.Signal(int, bool)
 
-    def __init__(self, note_id, title, text, color="#1e1b2e", is_pinned=False):
+    def __init__(self, note_id, title, text, color="#1b1430", is_pinned=False):
         super().__init__()
         self.note_id = note_id
         self.is_pinned = is_pinned
@@ -59,6 +59,9 @@ class NoteCard(QtWidgets.QFrame):
         layout.addWidget(self.text_label)
 
     def update_style(self):
+        base_color = QtGui.QColor(self.bg_color)
+        hover_color = base_color.darker(115).name() 
+        
         border_style = "1px solid #5E12F8" if self.is_pinned else "1px solid #322f50"
         
         self.setStyleSheet(f"""
@@ -70,14 +73,14 @@ class NoteCard(QtWidgets.QFrame):
             }}
             QFrame#NoteCard:hover {{
                 border: 1px solid #5E12F8;
-                background-color: rgba(94, 18, 248, 0.08); /* Camada de cor do app com baixa opacidade */
+                background-color: {hover_color};
             }}
         """)
 
     def show_context_menu(self):
         menu = QtWidgets.QMenu(self)
         menu.setStyleSheet("QMenu { background-color: #1e1b2e; color: white; border: 1px solid #322f50; } QMenu::item:selected { background-color: #5E12F8; }")
-        pin_action = menu.addAction("Desafixar" if self.is_pinned else "Fixar no topo")
+        pin_action = menu.addAction("Desafixar" if self.is_pinned else "Fixar")
         action = menu.exec_(QtGui.QCursor.pos())
         if action == pin_action:
             self.pin_toggled.emit(self.note_id, not self.is_pinned)

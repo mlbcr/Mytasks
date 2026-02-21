@@ -11,18 +11,14 @@ class ConfirmDeletePopup(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Faz o widget ocupar todo o espaço do pai
         self.setGeometry(parent.rect())
         
-        # Layout principal para centralizar o card
         layout = QtWidgets.QGridLayout(self)
         
-        # Fundo escurecido (Overlay)
         self.bg = QtWidgets.QFrame()
         self.bg.setStyleSheet("background-color: rgba(0, 0, 0, 180); border-radius: 20px;")
         layout.addWidget(self.bg, 0, 0, 1, 1)
 
-        # Card de mensagem
         self.card = QtWidgets.QFrame()
         self.card.setFixedSize(300, 160)
         self.card.setStyleSheet("""
@@ -100,7 +96,6 @@ class EditMissionModal(QtWidgets.QDialog):
 
         overlay_layout = QtWidgets.QGridLayout(self.bg_overlay)
         
-        # --- Card Principal ---
         self.content_card = QtWidgets.QFrame()
         self.content_card.setObjectName("MainCard")
         self.content_card.setFixedWidth(440)
@@ -182,7 +177,6 @@ class EditMissionModal(QtWidgets.QDialog):
         card_layout.setContentsMargins(35, 30, 35, 35)
         card_layout.setSpacing(15)
 
-        # --- Header com Título e Botão Excluir ---
         header_layout = QtWidgets.QHBoxLayout()
         self.edit_titulo = QtWidgets.QLineEdit(self.data.get("titulo", ""))
         self.edit_titulo.setObjectName("titulo_principal")
@@ -191,13 +185,12 @@ class EditMissionModal(QtWidgets.QDialog):
         self.btn_delete = QtWidgets.QPushButton("EXCLUIR")
         self.btn_delete.setObjectName("delete")
         self.btn_delete.setCursor(QtCore.Qt.PointingHandCursor)
-        self.btn_delete.clicked.connect(self.confirm_delete) # Conectado à função de confirmação
+        self.btn_delete.clicked.connect(self.confirm_delete) 
         
-        header_layout.addWidget(self.edit_titulo, 1) # Título expande
-        header_layout.addWidget(self.btn_delete)      # Botão fica no canto superior
+        header_layout.addWidget(self.edit_titulo, 1) 
+        header_layout.addWidget(self.btn_delete)     
         card_layout.addLayout(header_layout)
 
-        # --- Campos de Detalhes ---
         card_layout.addWidget(QtWidgets.QLabel("DETALHES"))
         self.edit_desc = QtWidgets.QTextEdit(self.data.get("descricao") or "")
         self.edit_desc.setPlaceholderText("O que precisa ser feito?")
@@ -213,7 +206,6 @@ class EditMissionModal(QtWidgets.QDialog):
         self.edit_cat.addItem("")
         self.edit_cat.addItems(list(CATEGORIAS.keys()))
 
-        # Seleciona a categoria atual, se houver
         categoria_inicial = self.data.get("categoria")
         if categoria_inicial and categoria_inicial in CATEGORIAS:
             self.edit_cat.setCurrentText(categoria_inicial)
@@ -243,10 +235,28 @@ class EditMissionModal(QtWidgets.QDialog):
 
         card_layout.addSpacing(15)
         
-        # --- Rodapé de Ações ---
         actions_layout = QtWidgets.QVBoxLayout()
         actions_layout.setSpacing(10)
         
+        card_layout.addWidget(QtWidgets.QLabel("REPETIR NOS DIAS"))
+        days_layout = QtWidgets.QHBoxLayout()
+        self.day_buttons = []
+        days_names = ["S", "T", "Q", "Q", "S", "S", "D"]
+        current_repeats = self.data.get("repetida", [False]*7)
+
+        for i, name in enumerate(days_names):
+            btn = QtWidgets.QPushButton(name)
+            btn.setCheckable(True)
+            btn.setFixedSize(30, 30)
+            btn.setChecked(current_repeats[i])
+            btn.setStyleSheet("""
+                QPushButton { border-radius: 15px; background: #25223d; color: white; border: 1px solid #322f50; }
+                QPushButton:checked { background: #5E12F8; border: none; }
+            """)
+            days_layout.addWidget(btn)
+            self.day_buttons.append(btn)
+        card_layout.addLayout(days_layout)
+
         self.btn_save = QtWidgets.QPushButton("SALVAR ALTERAÇÕES")
         self.btn_save.setObjectName("save")
         self.btn_save.setCursor(QtCore.Qt.PointingHandCursor)
@@ -269,7 +279,8 @@ class EditMissionModal(QtWidgets.QDialog):
             "descricao": self.edit_desc.toPlainText(),
             "xp": self.edit_xp.value(),
             "categoria": self.edit_cat.currentText(),
-            "prazo": self.edit_prazo.date().toString("yyyy-MM-dd")
+            "prazo": self.edit_prazo.date().toString("yyyy-MM-dd"),
+            "repetida": [btn.isChecked() for btn in self.day_buttons]
         }
         self.accepted.emit(new_data)
         self.accept()
