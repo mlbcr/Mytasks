@@ -2,12 +2,12 @@
   "usuario": {
     "nome": "mary",
     "nivel": 17,
-    "xp": 17,
+    "xp": 27,
     "pontos_disponiveis": 0,
     "atributos": {
       "inteligencia": 4,
       "forca": 2,
-      "vitalidade": 17,
+      "vitalidade": 18,
       "criatividade": 4,
       "social": 5
     }

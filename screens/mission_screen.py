@@ -24,8 +24,12 @@ def end_of_day():
 
 def end_of_week():
     today = datetime.date.today()
-    return today + datetime.timedelta(days=(6 - today.weekday()))
-    # segunda=0, domingo=6
+    days_until_sunday = 6 - today.weekday()
+
+    if days_until_sunday == 0:
+        days_until_sunday = 7
+
+    return today + datetime.timedelta(days=days_until_sunday)
 
 def end_of_month():
     today = datetime.date.today()
@@ -218,6 +222,36 @@ class MissionScreen(QtWidgets.QWidget):
         self.missions_container.addWidget(label)
 
 
+    def auto_update_tabs(self, missions):
+        today = datetime.date.today()
+        end_week = end_of_week()
+        changed = False
+
+        for m in missions:
+            if m.get("status") == "deleted":
+                continue
+
+            prazo_str = m.get("prazo")
+            if not prazo_str:
+                continue
+
+            prazo = datetime.date.fromisoformat(prazo_str)
+            old_tipo = m.get("tipo", "DIÁRIAS")
+
+            if prazo == today and old_tipo != "DIÁRIAS":
+                m["tipo"] = "DIÁRIAS"
+                changed = True
+
+            elif today < prazo <= end_week and old_tipo == "MENSAIS":
+                m["tipo"] = "SEMANAIS"
+                changed = True
+
+            elif prazo > end_week and old_tipo != "MENSAIS":
+                m["tipo"] = "MENSAIS"
+                changed = True
+
+        return changed
+
     def migrate_late_to_daily(self, missions):
         today = datetime.date.today()
 
@@ -231,30 +265,42 @@ class MissionScreen(QtWidgets.QWidget):
 
             prazo = datetime.date.fromisoformat(prazo_iso)
 
-            # apenas atualiza a aba
             if prazo <= today:
                 m["tipo"] = "DIÁRIAS"
             else:
                 m["tipo"] = self.get_type_by_date(prazo)
 
     def check_repetitions(self, missions):
-        """Verifica se missões concluídas ou atrasadas com repetição devem ser resetadas para hoje."""
         today = datetime.date.today()
-        today_weekday = today.weekday() 
-        
+        today_weekday = today.weekday()
         changed = False
+
         for m in missions:
-            if m.get("status") != "deleted" and any(m.get("repetida", [])):
-                prazo_str = m.get("prazo")
-                if not prazo_str: continue
-                
-                prazo_date = datetime.date.fromisoformat(prazo_str)
-                
-                if prazo_date < today or (prazo_date == today and m["status"] == "Concluída"):
-                    if m["repetida"][today_weekday]:
-                        m["status"] = "Pendente"
-                        m["prazo"] = today.isoformat()
-                        changed = True
+            if m.get("status") == "deleted":
+                continue
+
+            repet = m.get("repetida", [])
+            if not any(repet):
+                continue
+
+            prazo_str = m.get("prazo")
+            if not prazo_str:
+                continue
+
+            prazo = datetime.date.fromisoformat(prazo_str)
+
+            if repet[today_weekday]:
+
+                if prazo != today:
+                    m["status"] = "Pendente"
+                    m["prazo"] = today.isoformat()
+                    changed = True
+
+            else:
+                if prazo < today and m["status"] != "Concluída":
+                    m["status"] = "Atrasada"
+                    changed = True
+
         return changed
 
     def load_all(self):
@@ -264,68 +310,99 @@ class MissionScreen(QtWidgets.QWidget):
                 item.widget().deleteLater()
 
         data = load_missions()
-        all_missions = data.get("missions", [])
-        
-        rep_updated = self.check_repetitions(all_missions)
-        
-        self.migrate_late_to_daily(all_missions)
-        
-        if rep_updated:
+        missions = data.get("missions", [])
+
+        if self.auto_update_tabs(missions):
             save_missions_to_file(data)
 
         today = datetime.date.today()
+        today_weekday = today.weekday()
+
+        changed = False
+
         active, late, done = [], [], []
 
-        for m in all_missions:
-            if m.get("status") == "deleted": continue
-            
-            tipo = m.get("tipo", "DIÁRIAS")
-            prazo_str = m.get("prazo")
-            prazo = datetime.date.fromisoformat(prazo_str) if prazo_str else None
+        for m in missions:
+            if m.get("status") == "deleted":
+                continue
 
+            tipo = m.get("tipo", "DIÁRIAS")
             if tipo != self.current_filter:
                 continue
 
-            if m.get("status") == "Concluída":
-                done.append(m)
-            elif prazo and prazo < today:
-                m["status_visual"] = "Atrasada" 
-                late.append(m)
-            else:
-                m["status_visual"] = "Pendente"
-                active.append(m)
+            prazo_str = m.get("prazo")
+            prazo = datetime.date.fromisoformat(prazo_str) if prazo_str else today
 
-        def render(m):
+            repet = m.get("repetida", [])
+
+            if any(repet):
+
+                if repet[today_weekday]:
+
+                    if prazo != today:
+                        m["prazo"] = today.isoformat()
+                        m["status"] = "Pendente"
+                        changed = True
+
+                    if m["status"] == "Concluída":
+                        done.append(m)
+                    else:
+                        active.append(m)
+
+                else:
+                    if prazo < today and m["status"] != "Concluída":
+                        late.append(m)
+                    elif m["status"] == "Concluída":
+                        done.append(m)
+                    else:
+                        active.append(m)
+            else:
+                if m["status"] == "Concluída":
+                    done.append(m)
+                elif prazo < today:
+                    late.append(m)
+                else:
+                    active.append(m)
+
+        if changed:
+            save_missions_to_file(data)
+
+        def render(m, visual_status):
             card = MissionCard(
-                m["id"], 
-                m["titulo"], 
-                m.get("status_visual", m.get("status")),
+                m["id"],
+                m["titulo"],
+                visual_status,
                 m.get("xp", 10),
-                m.get("descricao"), 
-                m.get("categoria"), 
+                m.get("descricao"),
+                m.get("categoria"),
                 m.get("prazo"),
-                m.get("repetida") 
+                m.get("repetida")
             )
             card.clicked.connect(self.edit)
             card.status_changed.connect(self.sync)
+
             main_window = self.window()
             if hasattr(main_window, 'set_focus_mission'):
                 card.associate_requested.connect(main_window.set_focus_mission)
+
             self.missions_container.addWidget(card)
 
         if active:
             self.add_section_title("ATIVAS")
-            for m in active: render(m)
+            for m in active:
+                render(m, "Pendente")
 
         if late:
             self.add_section_title("ATRASADAS")
-            for m in late: render(m)
+            for m in late:
+                render(m, "Atrasada")
 
         if done:
             self.add_section_title("CONCLUÍDAS")
-            for m in done: render(m)
+            for m in done:
+                render(m, "Concluída")
 
-        self.status_footer.setVisible(not (late or active or done))
+        self.status_footer.setVisible(not (active or late or done))
 
     def create_mission(self):
         title = self.input_new.text().strip()
@@ -351,7 +428,7 @@ class MissionScreen(QtWidgets.QWidget):
             "horario_fim": None, 
             "descricao": "",
             "repetida": [False] * 7,
-            "tipo": self.current_filter 
+            "tipo": self.current_filter
         }
 
         data["missions"].append(new_m)

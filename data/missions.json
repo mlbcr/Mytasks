@@ -4,7 +4,7 @@
       "id": 1,
       "titulo": "testa",
       "descricao": "aaaaaaaa",
-      "status": "Pendente",
+      "status": "Concluída",
       "xp": 10,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
@@ -30,7 +30,7 @@
       "xp": 2,
       "categoria": "VITALIDADE",
       "data_criacao": "2026-02-04",
-      "prazo": "2026-02-19",
+      "prazo": "2026-02-22",
       "tipo": "DIÁRIAS",
       "horario_inicio": "14:00",
       "horario_fim": "15:00",
@@ -40,8 +40,8 @@
         false,
         false,
         false,
-        false,
-        false
+        true,
+        true
       ]
     },
     {
@@ -207,7 +207,7 @@
       "horario_inicio": "12:00",
       "horario_fim": "13:00",
       "descricao": "xeeee",
-      "tipo": "SEMANAIS",
+      "tipo": "DIÁRIAS",
       "repetida": [
         false,
         false,
@@ -274,6 +274,50 @@
         false
       ],
       "tipo": "DIÁRIAS"
+    },
+    {
+      "id": 23,
+      "titulo": "maria",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-23",
+      "data_criacao": "2026-02-22",
+      "horario_inicio": null,
+      "horario_fim": null,
+      "descricao": "",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tipo": "SEMANAIS"
+    },
+    {
+      "id": 24,
+      "titulo": "ar",
+      "status": "Pendente",
+      "xp": 5,
+      "categoria": "",
+      "prazo": "2026-02-23",
+      "data_criacao": "2026-02-22",
+      "horario_inicio": null,
+      "horario_fim": null,
+      "descricao": "",
+      "repetida": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "tipo": "SEMANAIS"
     }
   ]
 }

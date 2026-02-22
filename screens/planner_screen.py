@@ -109,16 +109,32 @@ class AddMissionOverlay(QtWidgets.QFrame):
 
     def __init__(self, missions, parent, data_selecionada):
         super().__init__(parent)
-        self.available_missions = [
-            m for m in missions 
-            if not m.get("horario_inicio") 
-            and m.get("prazo") == data_selecionada.isoformat()
-        ]
+        weekday = data_selecionada.weekday()
+
+        self.available_missions = []
+
+        for m in missions:
+
+            if m.get("horario_inicio") and not any(m.get("repetida", [])):
+                continue
+
+            prazo = m.get("prazo")
+            repet = m.get("repetida", [])
+
+            aparece = False
+
+            if prazo and prazo == data_selecionada.isoformat():
+                aparece = True
+
+            if repet and len(repet) > weekday and repet[weekday]:
+                aparece = True
+
+            if aparece:
+                self.available_missions.append(m)
         
         self.filtered = self.available_missions
         
         self.setGeometry(0, 0, parent.width(), parent.height())
-        # Fundo escurecido que aceita cliques
         self.setStyleSheet("background-color: rgba(10, 7, 20, 0.9);")
 
         self.panel = QtWidgets.QFrame(self)
@@ -599,17 +615,29 @@ class PlannerScreen(QtWidgets.QWidget):
         
         missions_filtered = []
 
+        weekday = data_selecionada.weekday()
+
         for m in data.get("missions", []):
+
             if m.get("status") == "deleted" or not m.get("horario_inicio"):
                 continue
 
             prazo = m.get("prazo")
-            if not prazo:
-                continue
-            
-            prazo_missao = datetime.date.fromisoformat(prazo)
+            repet = m.get("repetida", [])
 
-            if prazo_missao == data_selecionada:
+            aparece = False
+
+            # ✔ missão normal por data
+            if prazo:
+                prazo_missao = datetime.date.fromisoformat(prazo)
+                if prazo_missao == data_selecionada:
+                    aparece = True
+
+            # ✔ missão repetida pelo weekday
+            if repet and len(repet) > weekday and repet[weekday]:
+                aparece = True
+
+            if aparece:
                 missions_filtered.append(m)
 
         missions_filtered.sort(key=lambda x: x['horario_inicio'])
@@ -625,7 +653,6 @@ class PlannerScreen(QtWidgets.QWidget):
             if not placed:
                 groups.append([m])
 
-        # 4. Criação dos cards
         for group in groups:
             num_cols = len(group)
             width_p = 100 / num_cols
@@ -635,11 +662,9 @@ class PlannerScreen(QtWidgets.QWidget):
                 card.show()
 
     def check_overlap(self, m1, m2):
-        # Adicionamos uma margem de segurança de 1 pixel
         s1, e1 = time_to_pixels(m1['horario_inicio']), time_to_pixels(m1['horario_fim'])
         s2, e2 = time_to_pixels(m2['horario_inicio']), time_to_pixels(m2['horario_fim'])
         
-        # Retorna True se houver colisão de horários
         return s1 < e2 and s2 < e1
 
     def open_add_modal(self):
