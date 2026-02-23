@@ -339,7 +339,7 @@ class StatsCard(QtWidgets.QFrame):
         for i in range(7):
             dia = (segunda + datetime.timedelta(days=i)).isoformat()
             s = history.get(dia, {}).get("total_seconds", 0)
-            tempos.append(s / 3600)  # converter para horas
+            tempos.append(s / 3600) 
 
         max_estudo = max(tempos) if tempos else 0
         max_y = min(math.ceil(max_estudo), 24)
@@ -617,7 +617,7 @@ class SummaryCard(HomeCard):
         grid.setHorizontalSpacing(20)
         grid.setVerticalSpacing(8)
         
-        lbl_disponiveis = QtWidgets.QLabel("DISPONÍVEIS")
+        lbl_disponiveis = QtWidgets.QLabel("PENDENTES")
         lbl_disponiveis.setAlignment(QtCore.Qt.AlignCenter)
         lbl_disponiveis.setStyleSheet("""
             QLabel {

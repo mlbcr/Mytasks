@@ -1,6 +1,11 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 import datetime
 from data_manager import load_missions, resource_path, save_missions_to_file
+from widgets.notifications import Notification
+from PySide6.QtMultimedia import QSoundEffect
+from PySide6.QtCore import QUrl
+import sys
+import os
 
 PX_PER_HOUR = 160
 MARGIN_LEFT = 100
@@ -14,6 +19,13 @@ CATEGORY_COLORS = {
     "SOCIAL": "#5E12F8",
     "DEFAULT": "#2d234a"
 }
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
 
 def time_to_pixels(time_str):
     try:
@@ -547,9 +559,22 @@ class PlannerScreen(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        # Estado inicial: data de hoje
+
         self.current_date = datetime.date.today() 
-        
+        self.notified_today = set()
+
+        self.clock_timer = QtCore.QTimer(self)
+        self.clock_timer.timeout.connect(self.check_mission_time)
+        self.clock_timer.start(30000) 
+
+        sound_path = resource_path("audio/focus_done.wav")
+        self.finish_sound = QSoundEffect(self)
+
+        self.finish_sound.setSource(
+            QUrl.fromLocalFile(sound_path)
+        )
+        self.finish_sound.setVolume(0.5)
+
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setContentsMargins(0, 10, 0, 0)
         self.main_layout.setSpacing(10)
@@ -573,9 +598,69 @@ class PlannerScreen(QtWidgets.QWidget):
         self.load_all()
 
     def change_date(self, date):
-        """Método chamado sempre que você clica em um dia no seletor"""
         self.current_date = date
         self.load_all() 
+
+    def check_mission_time(self):
+        now = datetime.datetime.now()
+        today = now.date()
+
+        if not hasattr(self, "_last_date"):
+            self._last_date = today
+
+        if today != self._last_date:
+            self._last_date = today
+            self.reset_daily_notifications()
+
+        data = load_missions()
+        weekday = today.weekday()
+
+        for m in data.get("missions", []):
+            if m.get("status") == "deleted":
+                continue
+
+            start = m.get("horario_inicio")
+            if not start:
+                continue
+
+            aparece = False
+
+            prazo = m.get("prazo")
+            repet = m.get("repetida", [])
+
+            if prazo:
+                if datetime.date.fromisoformat(prazo) == today:
+                    aparece = True
+
+            if repet and len(repet) > weekday and repet[weekday]:
+                aparece = True
+
+            if not aparece:
+                continue
+
+            h, mnt = map(int, start.split(":"))
+            mission_time = now.replace(hour=h, minute=mnt, second=0, microsecond=0)
+
+            mission_key = f"{today}-{m['id']}"
+            if mission_key in self.notified_today:
+                continue
+
+            diff = (now - mission_time).total_seconds()
+
+            if 0 <= diff <= 60:
+                self.notified_today.add(mission_key)
+
+                self.toast = Notification(
+                    "Hora da missão",
+                    f"{m['titulo']}\n\nComece agora.",
+                    parent=None
+                )
+
+                self.finish_sound.play()
+                self.toast.show()
+
+    def reset_daily_notifications(self):
+        self.notified_today.clear()
 
     def setup_timeline(self):
         self.scroll = QtWidgets.QScrollArea()

@@ -3,6 +3,7 @@ from datetime import datetime
 from data_manager import load_focus_history, save_focus_history, load_missions
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtCore import QUrl
+from widgets.notifications import Notification
 import sys
 import os
 
@@ -12,6 +13,7 @@ def resource_path(relative_path):
     except AttributeError:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
 
 class FocusScreen(QtWidgets.QWidget):
     time_updated = QtCore.Signal(str)
@@ -54,6 +56,13 @@ class FocusScreen(QtWidgets.QWidget):
         self.build_ui()
         self.update_display()
         self.load_initial_history()
+
+    def format_seconds(self, secs):
+        h, r = divmod(secs, 3600)
+        m, s = divmod(r, 60)
+        if h:
+            return f"{h}h {m:02}m"
+        return f"{m}m {s:02}s"
 
     def apply_styles(self):
         self.setStyleSheet("""
@@ -305,10 +314,8 @@ class FocusScreen(QtWidgets.QWidget):
                 action = menu.addAction(f"{m['titulo']}")
                 action.triggered.connect(lambda _, mid=m["id"]: self.set_associated_mission(mid))
         
-        # Garante que a largura do menu seja no mínimo o tamanho do botão seletor
         menu.setMinimumWidth(self.btn_mission_selector.width())
 
-        # Executa o menu logo abaixo do botão
         menu.exec(self.btn_mission_selector.mapToGlobal(QtCore.QPoint(0, self.btn_mission_selector.height() + 5)))
     def manual_time_edit(self):
         if self.running or self.mode == "CRONOMETRO": return 
@@ -368,7 +375,6 @@ class FocusScreen(QtWidgets.QWidget):
         l_info = QtWidgets.QVBoxLayout()
         t_lbl = QtWidgets.QLabel(f"{duration_str} FOCADO"); t_lbl.setStyleSheet("font-size: 15px; font-weight: bold; color: white; border: none;")
         
-        # Container para os badges (Modo e Missão)
         badges_layout = QtWidgets.QHBoxLayout()
         badges_layout.setSpacing(8)
         
@@ -376,7 +382,6 @@ class FocusScreen(QtWidgets.QWidget):
         m_lbl.setStyleSheet("font-size: 9px; color: #5E12F8; font-weight: 900; letter-spacing: 1px; border: none;")
         badges_layout.addWidget(m_lbl)
 
-        # Se houver missão, adiciona o badge da missão
         if mission_id:
             all_missions = load_missions().get("missions", [])
             mission = next((m for m in all_missions if m["id"] == mission_id), None)
@@ -423,7 +428,33 @@ class FocusScreen(QtWidgets.QWidget):
             self.add_to_history(self.start_time, end_time, elapsed, mission_id=self.current_mission_id)
         
         self.finish_sound.play()
+        mission_name = None
+        if self.current_mission_id:
+            data = load_missions()
+            mission = next((m for m in data["missions"] if m["id"] == self.current_mission_id), None)
+            if mission:
+                mission_name = mission["titulo"]
 
+        session_str = self.format_seconds(elapsed)
+
+        day_key = self.start_time.strftime("%Y-%m-%d")
+        data = load_focus_history()
+        total_today = data[day_key]["total_seconds"]
+        total_str = self.format_seconds(total_today)
+
+        title = "Foco concluído"
+        message = "Descanse, beba uma água e continue quando estiver pronto :)"
+
+        if mission_name:
+            message = f"{mission_name} finalizada.\nDescanse, beba água e volte forte"
+
+        self.toast = Notification(
+            title,
+            message,
+            session_time=session_str,
+            total_today=total_str
+        )
+        self.toast.show()
         self.foco_finalizado.emit()
         self.stop_timer()
 
