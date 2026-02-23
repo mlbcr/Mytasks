@@ -1,6 +1,7 @@
-import sys
+import os, sys, winreg
 import ctypes
 from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from data_manager import load_name, resource_path
 from screens.mission_screen import MissionScreen
 from screens.focus_screen import FocusScreen
@@ -152,6 +153,22 @@ class MainWindow(QtWidgets.QWidget):
         else:
             self.menu.hide() 
             self.stack.setCurrentIndex(0) 
+        
+        self.tray = QSystemTrayIcon(self)
+        self.tray.setIcon(QtGui.QIcon(resource_path("images/icone.ico")))
+
+        menu = QMenu()
+
+        abrir = menu.addAction("Abrir MyTasks")
+        sair = menu.addAction("Sair")
+
+        abrir.triggered.connect(self.show_window)
+        sair.triggered.connect(QtWidgets.QApplication.quit)
+
+        self.tray.setContextMenu(menu)
+        self.tray.activated.connect(self.tray_clicked)
+
+        self.tray.show()
 
     def change(self, i):
         target_index = i + 1
@@ -159,14 +176,30 @@ class MainWindow(QtWidgets.QWidget):
         if target_index < self.stack.count():
             self.stack.setCurrentIndex(target_index)
 
-            # Atualiza botão ativo
             if i < len(self.menu.buttons):
                 self.menu.buttons[i].setChecked(True)
 
             if hasattr(self.screen_focus, "time_input"):
                 self.manage_overlay(self.screen_focus.time_input.text())
 
+    def tray_clicked(self, reason):
+        if reason == QSystemTrayIcon.Trigger:
+            self.show_window()
 
+    def show_window(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+        self.tray.showMessage(
+            "MyTasks",
+            "O app continua rodando em segundo plano.",
+            QSystemTrayIcon.Information,
+            2000
+        )
 
     def manage_overlay(self, time_str):
         self.overlay.update_time(time_str)
@@ -196,11 +229,27 @@ class MainWindow(QtWidgets.QWidget):
         if self.overlay.isVisible():
             self.overlay.move(self.width() - 180, self.height() - 70)
 
+def add_to_startup():
+    if getattr(sys, 'frozen', False):
+        exe = sys.executable
+    else:
+        exe = os.path.abspath(sys.argv[0])
+
+    key = winreg.OpenKey(
+        winreg.HKEY_CURRENT_USER,
+        r"Software\Microsoft\Windows\CurrentVersion\Run",
+        0,
+        winreg.KEY_SET_VALUE
+    )
+
+    winreg.SetValueEx(key, "MyTasks", 0, winreg.REG_SZ, exe)
+    winreg.CloseKey(key)
+
 if __name__ == "__main__":
     try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("mytasks.app")
     except: pass
     app = QtWidgets.QApplication(sys.argv)
-
+    add_to_startup()
 
     app_icon = QtGui.QIcon(resource_path("images/icone.ico"))
     app.setWindowIcon(app_icon)
