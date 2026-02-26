@@ -13,6 +13,137 @@ from screens.planner_screen import PlannerScreen
 from screens.name_screen import NameScreen 
 from screens.config_screen import ConfigScreen 
 
+DEV_MODE = False
+
+def white_standard_icon(widget, standard_icon, size=14):
+    icon = widget.style().standardIcon(standard_icon)
+    pix = icon.pixmap(size, size)
+
+    result = QtGui.QPixmap(pix.size())
+    result.fill(QtCore.Qt.transparent)
+
+    painter = QtGui.QPainter(result)
+    painter.drawPixmap(0, 0, pix)
+    painter.setCompositionMode(QtGui.QPainter.CompositionMode_SourceIn)
+    painter.fillRect(result.rect(), QtGui.QColor("#dcd6ff"))
+    painter.end()
+
+    return QtGui.QIcon(result)
+
+class TitleBar(QtWidgets.QFrame):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.parent = parent
+        self.setFixedHeight(46)
+
+        self.setObjectName("TitleBar")
+
+        self.setStyleSheet("""
+        QFrame#TitleBar {
+            background: qlineargradient(
+                x1:0, y1:0, x2:0, y2:1,
+                stop:0 #1b1433,
+                stop:1 #120d25
+            );
+            border-bottom: 1px solid #2d234a;
+        }
+
+        QLabel#AppTitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e8e6ff;
+            padding-left: 6px;
+        }
+
+        QPushButton {
+            border: none;
+            background: transparent;
+            width: 36px;
+            height: 28px;
+            border-radius: 6px;
+        }
+
+        QPushButton:hover {
+            background: rgba(255,255,255,0.08);
+        }
+
+        QPushButton#close:hover {
+            background: #e81123;
+        }
+        """)
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(12, 0, 8, 0)
+
+        icon = QtWidgets.QLabel()
+        icon.setPixmap(
+            QtGui.QPixmap(resource_path("images/icone.ico")).scaled(
+                18, 18,
+                QtCore.Qt.KeepAspectRatio,
+                QtCore.Qt.SmoothTransformation
+            )
+        )
+        icon.setStyleSheet("background: transparent;")
+        layout.addWidget(icon)
+
+
+        title = QtWidgets.QLabel("MyTasks")
+        title.setObjectName("AppTitle")
+        title.setStyleSheet("background: transparent;")
+        layout.addWidget(title)
+
+        layout.addStretch()
+
+        # botões
+        self.btn_min = QtWidgets.QPushButton()
+        self.btn_max = QtWidgets.QPushButton()
+        self.btn_close = QtWidgets.QPushButton()
+        self.btn_close.setObjectName("close")
+
+        self.btn_min.setIcon(white_standard_icon(self, QtWidgets.QStyle.SP_TitleBarMinButton))
+        self.btn_max.setIcon(white_standard_icon(self, QtWidgets.QStyle.SP_TitleBarMaxButton))
+        self.btn_close.setIcon(white_standard_icon(self, QtWidgets.QStyle.SP_TitleBarCloseButton))
+
+        self.btn_min.setIconSize(QtCore.QSize(14,14))
+        self.btn_max.setIconSize(QtCore.QSize(14,14))
+        self.btn_close.setIconSize(QtCore.QSize(14,14))
+
+        layout.addWidget(self.btn_min)
+        layout.addWidget(self.btn_max)
+        layout.addWidget(self.btn_close)
+
+        self.btn_min.clicked.connect(self.parent.showMinimized)
+        self.btn_max.clicked.connect(self.toggle_max_restore)
+        self.btn_close.clicked.connect(self.parent.close)
+
+        self.old_pos = None
+
+    def toggle_max_restore(self):
+        if self.parent.isMaximized():
+            self.parent.showNormal()
+            self.btn_max.setIcon(
+                self.style().standardIcon(QtWidgets.QStyle.SP_TitleBarMaxButton)
+            )
+        else:
+            self.parent.showMaximized()
+            self.btn_max.setIcon(
+                self.style().standardIcon(QtWidgets.QStyle.SP_TitleBarNormalButton)
+            )
+
+    # arrastar janela
+    def mousePressEvent(self, event):
+        if event.button() == QtCore.Qt.LeftButton:
+            self.old_pos = event.globalPosition().toPoint()
+
+    def mouseMoveEvent(self, event):
+        if self.old_pos:
+            delta = event.globalPosition().toPoint() - self.old_pos
+            self.parent.move(self.parent.pos() + delta)
+            self.old_pos = event.globalPosition().toPoint()
+
+    def mouseReleaseEvent(self, event):
+        self.old_pos = None
+
 class SideMenu(QtWidgets.QFrame):
     clicked = QtCore.Signal(int)
 
@@ -106,19 +237,32 @@ class SideMenu(QtWidgets.QFrame):
 class MainWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
+
         self.setWindowTitle("MyTasks")
         
         self.normal_size = QtCore.QSize(1100, 850) 
         self.resize(self.normal_size)
         self.setStyleSheet("background-color: #161025; color: white; font-family: 'Segoe UI';")
         
-        layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        root_layout = QtWidgets.QVBoxLayout(self)
+        root_layout.setContentsMargins(0,0,0,0)
+        root_layout.setSpacing(0)
+
+        self.titlebar = TitleBar(self)
+        root_layout.addWidget(self.titlebar)
+
+        content = QtWidgets.QHBoxLayout()
+        content.setContentsMargins(0,0,0,0)
+        content.setSpacing(0)
+
+        root_layout.addLayout(content)
         
         self.menu = SideMenu()
         self.menu.clicked.connect(self.change)
-        layout.addWidget(self.menu)
+        
+        content.addWidget(self.menu)
         
         self.screen_home = HomeScreen()
         self.screen_missions = MissionScreen(self)
@@ -144,7 +288,7 @@ class MainWindow(QtWidgets.QWidget):
         self.stack.addWidget(self.screen_focus)    
         self.stack.addWidget(self.screen_notes)
         self.stack.addWidget(self.screen_config)
-        layout.addWidget(self.stack)
+        content.addWidget(self.stack)
 
         nome_salvo = load_name()
         if nome_salvo:
@@ -174,6 +318,10 @@ class MainWindow(QtWidgets.QWidget):
         target_index = i + 1
 
         if target_index < self.stack.count():
+
+            if target_index == 1:
+                self.screen_home.refresh()
+
             self.stack.setCurrentIndex(target_index)
 
             if i < len(self.menu.buttons):
@@ -192,6 +340,10 @@ class MainWindow(QtWidgets.QWidget):
         self.activateWindow()
 
     def closeEvent(self, event):
+        if DEV_MODE:
+            event.accept()   # fecha direto (modo dev)
+            return
+
         event.ignore()
         self.hide()
         self.tray.showMessage(
@@ -249,7 +401,7 @@ if __name__ == "__main__":
     try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("mytasks.app")
     except: pass
     app = QtWidgets.QApplication(sys.argv)
-    add_to_startup()
+    # add_to_startup()
 
     app_icon = QtGui.QIcon(resource_path("images/icone.ico"))
     app.setWindowIcon(app_icon)
@@ -260,6 +412,10 @@ if __name__ == "__main__":
     def start_main():
         loading.close()
         window.show()
+
+        window.screen_home.refresh()
+        window.screen_missions.load_all()
+        window.screen_planner.load_all()
 
     loading.finished.connect(start_main)
 

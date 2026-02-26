@@ -118,9 +118,9 @@ class EditMissionModal(QtWidgets.QDialog):
                 background-color: #25223d; 
                 color: #ffffff; 
                 border: 1px solid #322f50; 
-                border-radius: 10px; 
-                padding: 12px; 
-                font-size: 14px;
+                border-radius: 12px; 
+                padding: 14px; 
+                font-size: 15px;
             }
             QLineEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBox:focus, QDateEdit:focus { 
                 border: 1px solid #5E12F8; 
@@ -171,11 +171,26 @@ class EditMissionModal(QtWidgets.QDialog):
             }
             
             QComboBox::drop-down { border: none; width: 30px; }
+
+            QDateEdit {
+                font-size: 20px;
+            }
+
+            QDateEdit::drop-down {
+                width: 36px;
+                border: none;
+            }
+
+            QCalendarWidget {
+                background: #1e1b2e;
+                color: white;
+                border-radius: 12px;
+            }
         """)
 
         card_layout = QtWidgets.QVBoxLayout(self.content_card)
         card_layout.setContentsMargins(35, 30, 35, 35)
-        card_layout.setSpacing(15)
+        card_layout.setSpacing(22)
 
         header_layout = QtWidgets.QHBoxLayout()
         self.edit_titulo = QtWidgets.QLineEdit(self.data.get("titulo", ""))
@@ -228,9 +243,18 @@ class EditMissionModal(QtWidgets.QDialog):
         card_layout.addLayout(h_layout)
 
         card_layout.addWidget(QtWidgets.QLabel("DATA LIMITE"))
-        self.edit_prazo = QtWidgets.QDateEdit(calendarPopup=True)
-        self.edit_prazo.setDisplayFormat("dd MMMM yyyy")
-        self.edit_prazo.setDate(QtCore.QDate.fromString(self.data.get("prazo", ""), "yyyy-MM-dd") if self.data.get("prazo") else QtCore.QDate.currentDate())
+        self.edit_prazo = QtWidgets.QDateEdit()
+        self.edit_prazo.setCalendarPopup(True)
+        self.edit_prazo.setDisplayFormat("dd/MM/yyyy")
+        self.edit_prazo.setMinimumHeight(44)   # deixa o campo maior
+        self.edit_prazo.setAlignment(QtCore.Qt.AlignCenter)
+
+        # data padrão
+        if self.data.get("prazo"):
+            data = QtCore.QDate.fromString(self.data.get("prazo"), "yyyy-MM-dd")
+            self.edit_prazo.setDate(data if data.isValid() else QtCore.QDate.currentDate())
+        else:
+            self.edit_prazo.setDate(QtCore.QDate.currentDate())
         card_layout.addWidget(self.edit_prazo)
 
         card_layout.addSpacing(15)

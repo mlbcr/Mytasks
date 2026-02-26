@@ -11,12 +11,7 @@ from matplotlib.patches import FancyBboxPatch
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import math
-
-
-CATEGORIAS = {
-    "INTELIGÊNCIA": "#f1c40f", "FORÇA": "#e74c3c",
-    "VITALIDADE": "#2ecc71", "CRIATIVIDADE": "#3498db", "SOCIAL": "#95a5a6"
-}
+from data_manager import load_config, save_config
 
 def format_seconds_full(s):
     hrs = s // 3600
@@ -28,17 +23,15 @@ class HomeScreen(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
         self.setup_ui()
-        self.refresh()
+        QtCore.QTimer.singleShot(50, self.refresh)
 
     def setup_ui(self):
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.main_layout.setContentsMargins(40, 40, 40, 40)
         self.main_layout.setSpacing(30)
         
-        # Header
         self.main_layout.addWidget(self.build_header())
         
-        # Dashboard grid
         dash_layout = QtWidgets.QHBoxLayout()
         dash_layout.setSpacing(20)
         
@@ -302,6 +295,13 @@ class StatsCard(QtWidgets.QFrame):
         
         self.layout.addWidget(rank_container)
 
+    def _lighten_color(self, hex_color, factor):
+        c = QtGui.QColor(hex_color)
+        r = min(255, int(c.red() * factor))
+        g = min(255, int(c.green() * factor))
+        b = min(255, int(c.blue() * factor))
+        return f"rgb({r},{g},{b})"
+
     def refresh_data(self):
         try:
             user_data = load_user()
@@ -469,131 +469,144 @@ class SkillsCard(HomeCard):
         super().__init__("PONTOS DE HABILIDADES")
         self.refresh_data()
 
+    def _lighten_color(self, hex_color, factor):
+        c = QtGui.QColor(hex_color)
+        r = min(255, int(c.red() * factor))
+        g = min(255, int(c.green() * factor))
+        b = min(255, int(c.blue() * factor))
+        return f"rgb({r},{g},{b})"
+
     def refresh_data(self):
-        # Limpar body
         while self.body.count():
             item = self.body.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
-                
+
         try:
             user_data = load_user()
+            config = load_config()
             u = user_data["usuario"]
+            categorias = config.get("categorias", {})
         except:
             return
 
-        # Container info
         info_container = QtWidgets.QWidget()
         info_layout = QtWidgets.QVBoxLayout(info_container)
         info_layout.setContentsMargins(0, 0, 0, 0)
         info_layout.setSpacing(4)
-        
+
         classe_lbl = QtWidgets.QLabel("CLASSE: INICIANTE")
         classe_lbl.setStyleSheet("""
-            QLabel {
-                font-size: 10px;
-                color: rgba(255,255,255,0.5);
-                font-weight: normal;
-            }
+            QLabel { font-size: 10px; color: rgba(255,255,255,0.5); }
         """)
-        
+
         pts_lbl = QtWidgets.QLabel(f"DISPONÍVEIS: {u['pontos_disponiveis']}")
         pts_lbl.setStyleSheet("""
-            QLabel {
-                font-size: 10px;
-                color: #5E12F8;
-                font-weight: bold;
-            }
+            QLabel { font-size: 10px; color: #5E12F8; font-weight: bold; }
         """)
-        
+
         info_layout.addWidget(classe_lbl)
         info_layout.addWidget(pts_lbl)
         self.body.addWidget(info_container)
 
-        # Separador
         separator = QtWidgets.QFrame()
         separator.setFixedHeight(1)
         separator.setStyleSheet("QFrame { background-color: #2d234a; border: none; }")
         self.body.addWidget(separator)
 
-        # Atributos
-        map_names = {
-            "inteligencia": "INTELIGÊNCIA",
-            "forca": "FORÇA",
-            "vitalidade": "VITALIDADE",
-            "criatividade": "CRIATIVIDADE",
-            "social": "SOCIAL"
-        }
-        
-        for key, val in u["atributos"].items():
+        if not categorias:
+            vazio = QtWidgets.QLabel("Nenhuma categoria criada ainda.")
+            vazio.setStyleSheet("color: rgba(255,255,255,0.4); font-size: 11px;")
+            self.body.addWidget(vazio)
+            return
+
+        for key, cat in categorias.items():
+
+            nome = cat.get("nome", key).upper()
+            pontos = cat.get("pontos", 0)
+            cor = cat.get("cor", "#5E12F8")
+
             row_widget = QtWidgets.QWidget()
             row = QtWidgets.QHBoxLayout(row_widget)
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(8)
-            
-            name = map_names.get(key, key.upper())
-            
-            lbl = QtWidgets.QLabel(f"● {name}")
-            lbl.setStyleSheet(f"""
-                QLabel {{
-                    color: {CATEGORIAS.get(name, 'white')};
+
+            # bolinha colorida
+            dot = QtWidgets.QLabel("●")
+            dot.setStyleSheet(f"color:{cor}; font-size:14px;")
+
+            lbl = QtWidgets.QLabel(nome)
+            lbl.setStyleSheet("""
+                QLabel {
+                    color: white;
                     font-weight: bold;
                     font-size: 11px;
-                    background: transparent;
-                }}
+                }
             """)
-            
-            val_lbl = QtWidgets.QLabel(str(val))
+
+            val_lbl = QtWidgets.QLabel(str(pontos))
             val_lbl.setStyleSheet("""
                 QLabel {
                     font-weight: bold;
                     color: white;
                     font-size: 11px;
-                    background: transparent;
                 }
             """)
-            
+
             btn = QtWidgets.QPushButton("+")
             btn.setFixedSize(22, 22)
             btn.setCursor(QtCore.Qt.PointingHandCursor)
             btn.setEnabled(u['pontos_disponiveis'] > 0)
-            btn.setStyleSheet("""
-                QPushButton {
-                    background: #5E12F8;
+
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background: #3b3b3b;
                     border-radius: 11px;
                     color: white;
                     font-weight: bold;
                     font-size: 14px;
                     border: none;
-                    padding: 0px 0px 2px 0px;
-                }
-                QPushButton:hover {
-                    background: #7B3BFB;
-                }
-                QPushButton:pressed {
-                    background: #4A0EC9;
-                }
-                QPushButton:disabled {
+                }}
+                QPushButton:hover {{
+                    background: {self._lighten_color(cor, 1.25)};
+                }}
+                QPushButton:pressed {{
+                    background: {self._lighten_color(cor, 0.85)};
+                }}
+                QPushButton:disabled {{
                     background: #2d234a;
                     color: rgba(255,255,255,0.3);
-                }
+                }}
             """)
-            btn.clicked.connect(lambda checked=False, k=key: self.add_point(k))
-            
+
+            btn.clicked.connect(lambda _, k=key: self.add_point(k))
+
+            row.addWidget(dot)
             row.addWidget(lbl)
             row.addStretch()
             row.addWidget(val_lbl)
             row.addSpacing(4)
             row.addWidget(btn)
+
             self.body.addWidget(row_widget)
 
-    def add_point(self, k):
-        data = load_user()
-        if data["usuario"]["pontos_disponiveis"] > 0:
-            data["usuario"]["pontos_disponiveis"] -= 1
-            data["usuario"]["atributos"][k] += 1
-            save_user(data)
-            self.refresh_data()
+    def add_point(self, key):
+        user = load_user()
+        config = load_config()
+
+        if user["usuario"]["pontos_disponiveis"] <= 0:
+            return
+
+        if key not in config.get("categorias", {}):
+            return
+
+        user["usuario"]["pontos_disponiveis"] -= 1
+        config["categorias"][key]["pontos"] = config["categorias"][key].get("pontos", 0) + 1
+
+        save_user(user)
+        save_config(config)
+
+        self.refresh_data()
 
 class SummaryCard(HomeCard):
     def __init__(self):

@@ -2,14 +2,92 @@ import json
 import os
 import sys
 
-DATA_DIR = "data"
+
+def get_data_dir():
+    if sys.platform == "win32":
+        base = os.getenv("APPDATA") 
+    else:
+        base = os.path.expanduser("~")
+
+    data_dir = os.path.join(base, "MyTasks")
+    os.makedirs(data_dir, exist_ok=True)
+    return data_dir
+
+
+DATA_DIR = get_data_dir()
+
 DATA_FILE = os.path.join(DATA_DIR, "user.json")
 MISSIONS_DATA = os.path.join(DATA_DIR, "missions.json")
 FOCUS_DATA = os.path.join(DATA_DIR, "focus_history.json")
 NOTES_FILE = os.path.join(DATA_DIR, "notes.json")
+CONFIG_PATH = os.path.join(DATA_DIR, "config.json")
 
-if not os.path.exists(DATA_DIR):
-    os.makedirs(DATA_DIR)
+DEFAULT_CONFIG = {
+    "categorias": {
+        "inteligencia": {
+            "nome": "INTELIGÊNCIA",
+            "cor": "#5E12F8",
+            "pontos": 0,
+            "ativa": True
+        },
+        "forca": {
+            "nome": "FORÇA",
+            "cor": "#FF4C4C",
+            "pontos": 0,
+            "ativa": True
+        },
+        "vitalidade": {
+            "nome": "VITALIDADE",
+            "cor": "#32D583",
+            "pontos": 0,
+            "ativa": True
+        },
+        "criatividade": {
+            "nome": "CRIATIVIDADE",
+            "cor": "#FF9F43",
+            "pontos": 0,
+            "ativa": True
+        },
+        "social": {
+            "nome": "SOCIAL",
+            "cor": "#2D9CDB",
+            "pontos": 0,
+            "ativa": True
+        }
+    }
+}
+
+def load_config():
+    if not os.path.exists(CONFIG_PATH):
+        save_config(DEFAULT_CONFIG)
+        return DEFAULT_CONFIG.copy()
+
+    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    if "categorias" not in data:
+        data["categorias"] = {}
+
+    for key, default_cat in DEFAULT_CONFIG["categorias"].items():
+        if key not in data["categorias"]:
+            data["categorias"][key] = default_cat.copy()
+        else:
+            cat = data["categorias"][key]
+            if "nome" not in cat:
+                cat["nome"] = default_cat["nome"]
+            if "cor" not in cat:
+                cat["cor"] = default_cat["cor"]
+            if "pontos" not in cat:
+                cat["pontos"] = 0
+            if "ativa" not in cat:
+                cat["ativa"] = True
+
+    save_config(data)
+    return data
+
+def save_config(data):
+    with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 def resource_path(relative_path):
     try:
