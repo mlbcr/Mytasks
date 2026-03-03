@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 from datetime import datetime
-from data_manager import load_focus_history, save_focus_history, load_missions
+from data_manager import load_focus_history, save_focus_history, load_missions, verificar_sequencia_foco
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtCore import QUrl
 from widgets.notifications import Notification
@@ -427,6 +427,7 @@ class FocusScreen(QtWidgets.QWidget):
             
             self.add_to_history(self.start_time, end_time, elapsed, mission_id=self.current_mission_id)
         
+        verificar_sequencia_foco()
         self.finish_sound.play()
         mission_name = None
         if self.current_mission_id:
@@ -455,6 +456,7 @@ class FocusScreen(QtWidgets.QWidget):
             total_today=total_str
         )
         self.toast.show()
+        verificar_sequencia_foco()
         self.foco_finalizado.emit()
         self.stop_timer()
 

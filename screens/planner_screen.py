@@ -1,6 +1,6 @@
 from PySide6 import QtCore, QtWidgets, QtGui
 import datetime
-from data_manager import load_missions, resource_path, save_missions_to_file
+from data_manager import load_missions, resource_path, save_missions_to_file, load_config
 from widgets.notifications import Notification
 from PySide6.QtMultimedia import QSoundEffect
 from PySide6.QtCore import QUrl
@@ -10,15 +10,6 @@ import os
 PX_PER_HOUR = 160
 MARGIN_LEFT = 100
 TIMELINE_PADDING = 40
-
-CATEGORY_COLORS = {
-    "INTELIGÊNCIA": "#1d3a7d",
-    "FORÇA": "#58182e",
-    "VITALIDADE": "#1a582e",
-    "CRIATIVIDADE": "#8c6b12",
-    "SOCIAL": "#5E12F8",
-    "DEFAULT": "#2d234a"
-}
 
 def resource_path(relative_path):
     try:
@@ -38,14 +29,28 @@ def duration_to_pixels(start, end):
     y_end = time_to_pixels(end)
     return y_end - y_start
 
+def get_category_color(categoria_nome):
+    config = load_config()
+    categorias = config.get("categorias", {})
+
+    if not categoria_nome:
+        return "#2d234a"  # fallback
+
+    categoria_nome = categoria_nome.strip().lower()
+
+    for key, cat in categorias.items():
+        if cat.get("nome", "").lower() == categoria_nome:
+            return cat.get("cor", "#2d234a")
+
+    return "#2d234a"  # fallback caso não encontre
+
 class MissionItemWidget(QtWidgets.QWidget):
     def __init__(self, titulo, descricao, xp, categoria):
         super().__init__()
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         
-        cat_upper = categoria.upper() if categoria else "DEFAULT"
-        self.cor_base = CATEGORY_COLORS.get(cat_upper, CATEGORY_COLORS["DEFAULT"])
+        self.cor_base = get_category_color(categoria)
         
         self.container = QtWidgets.QFrame()
         self.container.setObjectName("MissionContainer")
@@ -258,21 +263,17 @@ class MissionDetailsOverlay(QtWidgets.QFrame):
         super().__init__(parent)
         self.mission = mission
         self.setGeometry(0, 0, parent.width(), parent.height())
-        self.setStyleSheet("background-color: rgba(7, 5, 15, 0.95);") # Fundo ainda mais profundo
+        self.setStyleSheet("background-color: rgba(7, 5, 15, 0.95);")
 
-        # Efeito de Fade
         self.opacity_effect = QtWidgets.QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity_effect)
         self.anim = QtCore.QPropertyAnimation(self.opacity_effect, b"opacity")
         self.anim.setDuration(250); self.anim.setStartValue(0); self.anim.setEndValue(1); self.anim.start()
 
         self.panel = QtWidgets.QFrame(self)
-        self.panel.setFixedSize(450, 550) # Aumentei um pouco a altura para respirar
-        cat_raw = mission.get('categoria')
-        cat_upper = cat_raw.upper() if cat_raw else "DEFAULT"
-        cor_cat = CATEGORY_COLORS.get(cat_upper, CATEGORY_COLORS["DEFAULT"])
+        self.panel.setFixedSize(450, 550) 
+        cor_cat = get_category_color(mission.get('categoria'))
         
-        # Design Moderno: Borda lateral colorida e fundo escuro facetado
         self.panel.setStyleSheet(f"""
             QFrame#Panel {{ 
                 background-color: #161025; 
@@ -423,9 +424,7 @@ class PlannerCard(QtWidgets.QFrame):
         self.mission_data = m
         is_done = m['status'] == "Concluída"
         
-        cat_raw = m.get('categoria')
-        cat_upper = cat_raw.upper() if cat_raw else "DEFAULT"
-        cor_base = CATEGORY_COLORS.get(cat_upper, CATEGORY_COLORS["DEFAULT"])
+        cor_base = get_category_color(m.get('categoria'))
         bg_color = "#1b1430" if not is_done else "#120e1f"
         accent_color = cor_base if not is_done else "#4a4a4a"
         

@@ -6,7 +6,7 @@ from data_manager import load_missions, save_missions_to_file
 from widgets.mission_card import MissionCard
 from widgets.edit_modal import EditMissionModal
 from widgets.custom_button import RotatableButton
-from data_manager import load_user, save_user
+from data_manager import load_user, save_user, save_config, load_config
 from progression import add_xp_to_user
 
 import sys
@@ -484,16 +484,16 @@ class MissionScreen(QtWidgets.QWidget):
 
                         categoria = m.get("categoria")
                         if categoria:
-                            key_map = {
-                                "INTELIGÊNCIA": "inteligencia",
-                                "FORÇA": "forca",
-                                "VITALIDADE": "vitalidade",
-                                "CRIATIVIDADE": "criatividade",
-                                "SOCIAL": "social"
-                            }
-                            attr_key = key_map.get(categoria.upper())
-                            if attr_key:
-                                user_data["usuario"]["atributos"][attr_key] += 1
+                            config = load_config()
+                            categorias = config.get("categorias", {})
+
+                            for key, cat in categorias.items():
+                                nome = cat.get("nome", "").lower()
+                                if nome == categoria.lower() or key.lower() == categoria.lower():
+                                    cat["pontos"] += 1
+                                    break
+
+                            save_config(config)
 
                         print(f"XP ganho: {gained_xp}")
 
@@ -507,16 +507,16 @@ class MissionScreen(QtWidgets.QWidget):
 
                         categoria = m.get("categoria")
                         if categoria:
-                            key_map = {
-                                "INTELIGÊNCIA": "inteligencia",
-                                "FORÇA": "forca",
-                                "VITALIDADE": "vitalidade",
-                                "CRIATIVIDADE": "criatividade",
-                                "SOCIAL": "social"
-                            }
-                            attr_key = key_map.get(categoria.upper())
-                            if attr_key:
-                                user_data["usuario"]["atributos"][attr_key] -= 1 
+                            config = load_config()
+                            categorias = config.get("categorias", {})
+
+                            for key, cat in categorias.items():
+                                nome = cat.get("nome", "").lower()
+                                if nome == categoria.lower() or key.lower() == categoria.lower():
+                                    cat["pontos"] = max(0, cat["pontos"] - 1)
+                                    break
+
+                            save_config(config)
 
                         print(f"XP perdido: {lost_xp}")
 

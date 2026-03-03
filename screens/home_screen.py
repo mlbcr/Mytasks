@@ -11,7 +11,7 @@ from matplotlib.patches import FancyBboxPatch
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import math
-from data_manager import load_config, save_config
+from data_manager import load_config, save_config, verificar_sequencia_foco
 
 def format_seconds_full(s):
     hrs = s // 3600
@@ -89,6 +89,7 @@ class HomeScreen(QtWidgets.QWidget):
         return header_container
 
     def refresh(self):
+        verificar_sequencia_foco()
         nome = load_name() or "Recruta"
         self.welcome_label.setText(f"BEM-VINDO, {nome.upper()}")
         self.stats.refresh_data()
@@ -616,68 +617,47 @@ class SummaryCard(HomeCard):
     def refresh_data(self):
         while self.body.count():
             item = self.body.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
+            if item.widget(): item.widget().deleteLater()
                 
         data = load_missions()
         m_list = data.get("missions", [])
-        pendentes = len([m for m in m_list if m["status"] == "Pendente"])
-        feitas = len([m for m in m_list if m["status"] == "Concluída"])
         
+        # Lógica de contagem
+        pendentes = len([m for m in m_list if m["status"] == "Pendente"])
+        feitas_hoje = len([m for m in m_list if m["status"] == "Concluída"])
+        
+        # Simulando um total histórico (se não tiver no JSON, somamos as atuais)
+        # O ideal seria ter um campo "total_completadas" no user.json
+        user_data = load_user()
+        total_historico = user_data.get("usuario", {}).get("total_missoes_completas", feitas_hoje)
+
         grid_widget = QtWidgets.QWidget()
         grid = QtWidgets.QGridLayout(grid_widget)
-        grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(20)
-        grid.setVerticalSpacing(8)
         
-        lbl_disponiveis = QtWidgets.QLabel("PENDENTES")
-        lbl_disponiveis.setAlignment(QtCore.Qt.AlignCenter)
-        lbl_disponiveis.setStyleSheet("""
-            QLabel {
-                font-size: 9px;
-                color: rgba(255,255,255,0.4);
-                font-weight: bold;
-                letter-spacing: 1px;
-            }
-        """)
-        
-        val_disponiveis = QtWidgets.QLabel(str(pendentes))
-        val_disponiveis.setAlignment(QtCore.Qt.AlignCenter)
-        val_disponiveis.setStyleSheet("""
-            QLabel {
-                font-size: 32px;
-                font-weight: bold;
-                color: white;
-            }
-        """)
-        
-        lbl_realizadas = QtWidgets.QLabel("REALIZADAS")
-        lbl_realizadas.setAlignment(QtCore.Qt.AlignCenter)
-        lbl_realizadas.setStyleSheet("""
-            QLabel {
-                font-size: 9px;
-                color: rgba(255,255,255,0.4);
-                font-weight: bold;
-                letter-spacing: 1px;
-            }
-        """)
-        
-        val_realizadas = QtWidgets.QLabel(str(feitas))
-        val_realizadas.setAlignment(QtCore.Qt.AlignCenter)
-        val_realizadas.setStyleSheet("""
-            QLabel {
-                font-size: 32px;
-                font-weight: bold;
-                color: white;
-            }
-        """)
-        
-        grid.addWidget(lbl_disponiveis, 0, 0)
-        grid.addWidget(val_disponiveis, 1, 0)
-        grid.addWidget(lbl_realizadas, 0, 1)
-        grid.addWidget(val_realizadas, 1, 1)
+        # Layout para os números (Pendentes | Feitas)
+        grid.addWidget(self.create_stat_block("PENDENTES", pendentes), 0, 0)
+        grid.addWidget(self.create_stat_block("CONCLUÍDAS", feitas_hoje), 0, 1)
         
         self.body.addWidget(grid_widget)
+        
+        # Adiciona o Total abaixo
+        total_lbl = QtWidgets.QLabel(f"TOTAL HISTÓRICO: {total_historico}")
+        total_lbl.setStyleSheet("color: #00fa9a; font-size: 10px; font-weight: bold; margin-top: 5px;")
+        total_lbl.setAlignment(QtCore.Qt.AlignCenter)
+        self.body.addWidget(total_lbl)
+
+    def create_stat_block(self, title, value):
+        container = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(container)
+        lbl = QtWidgets.QLabel(title)
+        lbl.setStyleSheet("font-size: 9px; color: rgba(255,255,255,0.4); font-weight: bold;")
+        val = QtWidgets.QLabel(str(value))
+        val.setStyleSheet("font-size: 28px; font-weight: bold; color: white;")
+        lbl.setAlignment(QtCore.Qt.AlignCenter)
+        val.setAlignment(QtCore.Qt.AlignCenter)
+        layout.addWidget(lbl)
+        layout.addWidget(val)
+        return container
 
 class StreakCard(HomeCard):
     def __init__(self):

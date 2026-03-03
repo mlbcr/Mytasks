@@ -1,9 +1,5 @@
 from PySide6 import QtCore, QtWidgets, QtGui
-
-CATEGORIAS = {
-    "INTELIGÊNCIA": "#f1c40f", "FORÇA": "#e74c3c",
-    "VITALIDADE": "#2ecc71", "CRIATIVIDADE": "#3498db", "SOCIAL": "#95a5a6"
-}
+from data_manager import load_config
 
 class MissionCard(QtWidgets.QFrame):
     status_changed = QtCore.Signal(object)
@@ -149,9 +145,28 @@ class MissionCard(QtWidgets.QFrame):
         if not categoria:
             self.cat_chip.hide()
             return
-        cor = CATEGORIAS.get(categoria.upper(), "#777")
-        self.cat_chip.setText(f" {categoria.upper()} ")
-        self.cat_chip.setStyleSheet(f"background-color: {cor}; color: #0e0b1c; border-radius: 4px; font-size: 9px; font-weight: 900; padding: 2px;")
+
+        config = load_config()
+        categorias_config = config.get("categorias", {})
+        
+        cor = "#777777"  # Cor padrão caso não encontre
+        nome_exibicao = categoria.upper()
+
+        for key, dados in categorias_config.items():
+            if key.lower() == categoria.lower() or dados.get("nome", "").lower() == categoria.lower():
+                cor = dados.get("cor", "#5E12F8")
+                nome_exibicao = dados.get("nome", key).upper()
+                break
+
+        self.cat_chip.setText(f" {nome_exibicao} ")
+        self.cat_chip.setStyleSheet(f"""
+            background-color: {cor}; 
+            color: #0e0b1c; 
+            border-radius: 4px; 
+            font-size: 9px; 
+            font-weight: 900; 
+            padding: 2px;
+        """)
         self.cat_chip.show()
 
     def update_prazo(self, prazo):

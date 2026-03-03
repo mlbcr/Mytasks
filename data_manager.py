@@ -2,6 +2,7 @@ import json
 import os
 import sys
 
+import datetime
 
 def get_data_dir():
     if sys.platform == "win32":
@@ -54,7 +55,12 @@ DEFAULT_CONFIG = {
             "pontos": 0,
             "ativa": True
         }
-    }
+    },
+    "gameplay": {
+    "min_foco_para_sequencia_min": 10,
+    "tolerancia_falha_dias": 0,
+    "xp_por_minuto_foco": 1
+  }
 }
 
 def load_config():
@@ -68,19 +74,25 @@ def load_config():
     if "categorias" not in data:
         data["categorias"] = {}
 
-    for key, default_cat in DEFAULT_CONFIG["categorias"].items():
-        if key not in data["categorias"]:
-            data["categorias"][key] = default_cat.copy()
-        else:
-            cat = data["categorias"][key]
+    for key, cat in data["categorias"].items():
+        default_cat = DEFAULT_CONFIG["categorias"].get(key)
+
+        if default_cat:
             if "nome" not in cat:
                 cat["nome"] = default_cat["nome"]
             if "cor" not in cat:
                 cat["cor"] = default_cat["cor"]
-            if "pontos" not in cat:
-                cat["pontos"] = 0
-            if "ativa" not in cat:
-                cat["ativa"] = True
+
+        if "pontos" not in cat:
+            cat["pontos"] = 0
+        if "ativa" not in cat:
+            cat["ativa"] = True
+    
+    if "gameplay" not in data:
+        data["gameplay"] = DEFAULT_CONFIG["gameplay"].copy()
+
+    if "min_foco_para_sequencia_min" not in data["gameplay"]:
+        data["gameplay"]["min_foco_para_sequencia_min"] = 10
 
     save_config(data)
     return data
@@ -192,3 +204,33 @@ def load_notes():
 def save_notes(data):
     with open(NOTES_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4, ensure_ascii=False)
+
+def verificar_sequencia_foco():
+    try:
+        user = load_user()
+        config = load_config()
+        history = load_focus_history()
+
+        hoje = datetime.date.today().isoformat()
+        ontem = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+
+        limite_minutos = config.get("gameplay", {}).get("min_foco_para_sequencia_min", 10)
+        
+        tempo_hoje_min = history.get(hoje, {}).get("total_seconds", 0) / 60
+
+        # Se atingiu o tempo mínimo e ainda não foi contabilizado hoje
+        if tempo_hoje_min >= limite_minutos:
+            if user["foco"].get("ultima_data_streak") != hoje:
+                # Se focou ontem, soma. Se não, reseta para 1.
+                tempo_ontem_min = history.get(ontem, {}).get("total_seconds", 0) / 60
+                if tempo_ontem_min >= limite_minutos:
+                    user["sequencia"]["foco_consecutivo"] += 1
+                else:
+                    user["sequencia"]["foco_consecutivo"] = 1
+                
+                user["foco"]["ultima_data_streak"] = hoje
+        
+        user["foco"]["ultima_data"] = hoje
+        save_user(user)
+    except Exception as e:
+        print(f"Erro streak: {e}")
