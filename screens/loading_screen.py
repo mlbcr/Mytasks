@@ -44,7 +44,7 @@ class LoadingScreen(QtWidgets.QWidget):
         layout.setAlignment(QtCore.Qt.AlignCenter)
         layout.setSpacing(25)
 
-        title = QtWidgets.QLabel("MyTasks")
+        title = QtWidgets.QLabel("LevelUp")
         title.setStyleSheet("""
             font-size: 32px;
             font-weight: bold;

@@ -12,8 +12,12 @@ from screens.loading_screen import LoadingScreen
 from screens.planner_screen import PlannerScreen
 from screens.name_screen import NameScreen 
 from screens.config_screen import ConfigScreen 
+from data_manager import load_user
+from progression import xp_needed_for_level, get_rank
 
-DEV_MODE = False
+
+DEV_MODE = True
+
 
 def white_standard_icon(widget, standard_icon, size=14):
     icon = widget.style().standardIcon(standard_icon)
@@ -87,7 +91,7 @@ class TitleBar(QtWidgets.QFrame):
         layout.addWidget(icon)
 
 
-        title = QtWidgets.QLabel("MyTasks")
+        title = QtWidgets.QLabel("LevelUp")
         title.setObjectName("AppTitle")
         title.setStyleSheet("background: transparent;")
         layout.addWidget(title)
@@ -184,7 +188,8 @@ class SideMenu(QtWidgets.QFrame):
         self.main_layout.setContentsMargins(15, 40, 15, 20)
         self.main_layout.setSpacing(10)
 
-        logo = QtWidgets.QLabel("MyTasks")
+        # 1. Logo
+        logo = QtWidgets.QLabel("LevelUp")
         logo.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
@@ -213,25 +218,113 @@ class SideMenu(QtWidgets.QFrame):
             btn.setCheckable(True)
             btn.setFixedHeight(45)
             btn.setCursor(QtCore.Qt.PointingHandCursor)
-
-            icon = QtGui.QIcon(resource_path(icon_path))
-            btn.setIcon(icon)
+            btn.setIcon(QtGui.QIcon(resource_path(icon_path)))
             btn.setIconSize(QtCore.QSize(18, 18))
-
             btn.clicked.connect(lambda _, x=index: self.clicked.emit(x))
 
             self.button_group.addButton(btn)
             self.main_layout.addWidget(btn)
             self.buttons.append(btn)
 
-        self.main_layout.addStretch()
 
+        self.profile_box = QtWidgets.QFrame()
+        self.profile_box.setStyleSheet("""
+            QFrame {
+                background: #141028;
+                border-radius: 14px;
+            }
+        """)
+        
+        self.main_layout.addStretch(2)
+        self.main_layout.addSpacing(20)
+        self.main_layout.addWidget(self.profile_box)
+        self.main_layout.addStretch(1)
+
+        profile_main_layout = QtWidgets.QHBoxLayout(self.profile_box)
+        profile_main_layout.setContentsMargins(10, 10, 10, 10)
+        profile_main_layout.setSpacing(12)
+
+        self.avatar_label = QtWidgets.QLabel()
+        self.avatar_label.setFixedSize(42, 42)
+
+        avatar_pix = QtGui.QPixmap(resource_path("images/profile.jpg"))
+        if not avatar_pix.isNull():
+            avatar_pix = avatar_pix.scaled(
+                42, 42,
+                QtCore.Qt.KeepAspectRatioByExpanding,
+                QtCore.Qt.SmoothTransformation
+            )
+            self.avatar_label.setPixmap(avatar_pix)
+
+        self.avatar_label.setStyleSheet("""
+            QLabel {
+                border-radius: 21px;
+                background: #120d25;
+            }
+        """)
+                
+        profile_main_layout.addWidget(self.avatar_label)
+
+        text_layout = QtWidgets.QVBoxLayout()
+        text_layout.setSpacing(2)
+
+        self.name_label = QtWidgets.QLabel("Mary")
+        self.name_label.setStyleSheet("""
+            font-size:13px;
+            font-weight:600;
+            color:white;
+            background:transparent;
+        """)
+        self.level_label = QtWidgets.QLabel("Level 9")
+        self.level_label.setStyleSheet("color:#bdb6ff; font-size:11px; background: transparent;")
+
+        self.xp_bar = QtWidgets.QProgressBar()
+        self.xp_bar.setFixedHeight(6)
+        self.xp_bar.setTextVisible(False)
+        self.xp_bar.setStyleSheet("""
+            QProgressBar { background-color: #120d25; border-radius: 3px; border: none; }
+            QProgressBar::chunk { 
+                background-color: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #5E12F8, stop:1 #A277FF);
+                border-radius: 3px; 
+            }
+        """)
+
+        self.rank_label = QtWidgets.QLabel("Rank D")
+        self.rank_label.setStyleSheet("color:#888; font-size:10px; background: transparent;")
+
+        text_layout.addWidget(self.name_label)
+        lvl_row = QtWidgets.QHBoxLayout()
+        lvl_row.setSpacing(6)
+        lvl_row.addWidget(self.level_label)
+        lvl_row.addStretch()
+        lvl_row.addWidget(self.rank_label)
+
+        text_layout.addLayout(lvl_row)
+        text_layout.addWidget(self.xp_bar)
+        
+        profile_main_layout.addLayout(text_layout)
+        
         self.timer_widget = FocusOverlay()
         self.timer_widget.setVisible(False)
         self.main_layout.addWidget(self.timer_widget, alignment=QtCore.Qt.AlignCenter)
 
         if self.buttons:
             self.buttons[0].setChecked(True)
+
+    def refresh_profile(self):
+        try:
+            data = load_user()
+            if not data or "usuario" not in data:
+                return
+            u = data["usuario"]
+            self.name_label.setText(u.get("nome", "Player"))
+            self.level_label.setText(f"Level {u.get('nivel', 1)}")
+            self.rank_label.setText(f"Rank {get_rank(u.get('nivel', 1))}")
+            xp_needed = xp_needed_for_level(u.get("nivel", 1))
+            self.xp_bar.setMaximum(xp_needed)
+            self.xp_bar.setValue(u.get("xp", 0))
+        except Exception as e:
+            print("Erro ao atualizar perfil:", e)
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -240,7 +333,7 @@ class MainWindow(QtWidgets.QWidget):
         self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground, False)
 
-        self.setWindowTitle("MyTasks")
+        self.setWindowTitle("LevelUp")
         
         self.normal_size = QtCore.QSize(1100, 850) 
         self.resize(self.normal_size)
@@ -302,8 +395,7 @@ class MainWindow(QtWidgets.QWidget):
         self.tray.setIcon(QtGui.QIcon(resource_path("images/icone.ico")))
 
         menu = QMenu()
-
-        abrir = menu.addAction("Abrir MyTasks")
+        abrir = menu.addAction("Abrir LevelUp")
         sair = menu.addAction("Sair")
 
         abrir.triggered.connect(self.show_window)
@@ -347,7 +439,7 @@ class MainWindow(QtWidgets.QWidget):
         event.ignore()
         self.hide()
         self.tray.showMessage(
-            "MyTasks",
+            "LevelUp",
             "O app continua rodando em segundo plano.",
             QSystemTrayIcon.Information,
             2000
@@ -394,7 +486,7 @@ def add_to_startup():
         winreg.KEY_SET_VALUE
     )
 
-    winreg.SetValueEx(key, "MyTasks", 0, winreg.REG_SZ, exe)
+    winreg.SetValueEx(key, "LevelUp", 0, winreg.REG_SZ, exe)
     winreg.CloseKey(key)
 
 if __name__ == "__main__":
@@ -411,11 +503,13 @@ if __name__ == "__main__":
 
     def start_main():
         loading.close()
-        window.show()
 
         window.screen_home.refresh()
         window.screen_missions.load_all()
         window.screen_planner.load_all()
+        window.menu.refresh_profile()
+
+        window.show() 
 
     loading.finished.connect(start_main)
 

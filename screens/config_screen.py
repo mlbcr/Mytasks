@@ -63,6 +63,54 @@ class ConfigScreen(QtWidgets.QWidget):
         title.setStyleSheet("font-size:20px;font-weight:bold;color:white;")
         self.main_layout.addWidget(title)
 
+        msg_card = QtWidgets.QFrame()
+        msg_card.setStyleSheet("""
+            QFrame {
+                background:#1b1430;
+                border:1px solid #322f50;
+                border-radius:12px;
+            }
+        """)
+
+        msg_layout = QtWidgets.QVBoxLayout(msg_card)
+        msg_layout.setContentsMargins(15,12,15,12)
+
+        label = QtWidgets.QLabel("Frase motivacional do dia")
+        label.setStyleSheet("color:white;font-weight:bold;")
+
+        self.daily_input = QtWidgets.QLineEdit()
+        self.daily_input.setPlaceholderText("Digite uma frase para aparecer amanhã...")
+        self.daily_input.setStyleSheet("""
+            QLineEdit {
+                background:#141022;
+                border:1px solid #322f50;
+                border-radius:6px;
+                padding:6px;
+                color:white;
+            }
+        """)
+
+        save_btn = QtWidgets.QPushButton("Salvar frase")
+        save_btn.setCursor(QtCore.Qt.PointingHandCursor)
+        save_btn.setStyleSheet("""
+            QPushButton {
+                background:#5E12F8;
+                border:none;
+                border-radius:8px;
+                padding:6px;
+                color:white;
+                font-weight:bold;
+            }
+        """)
+
+        save_btn.clicked.connect(self.save_daily_message)
+
+        msg_layout.addWidget(label)
+        msg_layout.addWidget(self.daily_input)
+        msg_layout.addWidget(save_btn)
+
+        self.main_layout.insertWidget(1, msg_card)
+
         self.scroll = QtWidgets.QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
@@ -245,3 +293,18 @@ class ConfigScreen(QtWidgets.QWidget):
         self.config["categorias"][key]["cor"] = color
         save_config(self.config)
         self.load_categories()
+    def save_daily_message(self):
+        text = self.daily_input.text().strip()
+
+        if "daily_message" not in self.config:
+            self.config["daily_message"] = {}
+
+        self.config["daily_message"]["mensagem"] = text
+
+        save_config(self.config)
+
+        QtWidgets.QMessageBox.information(
+            self,
+            "Frase salva",
+            "Sua frase aparecerá amanhã ✨"
+        )

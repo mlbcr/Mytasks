@@ -93,12 +93,10 @@ class MissionScreen(QtWidgets.QWidget):
                 border-radius: 27px; /* Metade do tamanho para ser circular */
                 font-size: 28px;
                 font-weight: bold;
-                border: 1px solid rgba(255, 255, 255, 0.1);
                 padding-bottom: 5px;
             }
             QPushButton:hover {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #8C4BFF, stop:1 #6D2AF9);
-                border: 1px solid rgba(255, 255, 255, 0.3);
             }
             QPushButton:pressed {
                 background: #4A0EC7;
