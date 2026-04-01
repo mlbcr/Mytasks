@@ -39,6 +39,7 @@ def end_of_month():
 
 class MissionScreen(QtWidgets.QWidget):
     mission_completed = QtCore.Signal()
+    mission_clicked = QtCore.Signal(dict)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -301,6 +302,19 @@ class MissionScreen(QtWidgets.QWidget):
 
         return changed
 
+    def abrir_detalhes(self, card):
+        data = load_missions()
+        
+        mission_data = next((m for m in data["missions"] if m["id"] == card.mission_id), None)
+        
+        if mission_data:
+            from widgets.detail_mission_modal import DetailsMissionModal
+            modal = DetailsMissionModal(mission_data, self.window())
+            
+            modal.edit_requested.connect(lambda: self.edit(card))
+            
+            modal.exec()
+
     def load_all(self):
         while self.missions_container.count():
             item = self.missions_container.takeAt(0)
@@ -310,14 +324,17 @@ class MissionScreen(QtWidgets.QWidget):
         data = load_missions()
         missions = data.get("missions", [])
 
+        if self.check_repetitions(missions):
+            save_missions_to_file(data)
+
         if self.auto_update_tabs(missions):
             save_missions_to_file(data)
 
         today = datetime.date.today()
+        today_iso = today.isoformat()
         today_weekday = today.weekday()
 
         changed = False
-
         active, late, done = [], [], []
 
         for m in missions:
@@ -331,33 +348,34 @@ class MissionScreen(QtWidgets.QWidget):
             prazo_str = m.get("prazo")
             prazo = datetime.date.fromisoformat(prazo_str) if prazo_str else today
 
+            if m["status"] == "Concluída":
+                repet = m.get("repetida", [])
+                
+                if any(repet) and repet[today_weekday]:
+                    pass  
+                
+                else:
+                    if prazo_str == today_iso:
+                        done.append(m)
+                    continue
+
+            # Lógica para Repetições (se houver)
             repet = m.get("repetida", [])
-
             if any(repet):
-
                 if repet[today_weekday]:
-
                     if prazo != today:
                         m["prazo"] = today.isoformat()
                         m["status"] = "Pendente"
                         changed = True
-
-                    if m["status"] == "Concluída":
-                        done.append(m)
-                    else:
-                        active.append(m)
-
+                    active.append(m)
                 else:
-                    if prazo < today and m["status"] != "Concluída":
+                    # Se não é dia de repetir e está atrasada
+                    if prazo < today:
                         late.append(m)
-                    elif m["status"] == "Concluída":
-                        done.append(m)
                     else:
                         active.append(m)
             else:
-                if m["status"] == "Concluída":
-                    done.append(m)
-                elif prazo < today:
+                if prazo < today:
                     late.append(m)
                 else:
                     active.append(m)
@@ -376,8 +394,10 @@ class MissionScreen(QtWidgets.QWidget):
                 m.get("prazo"),
                 m.get("repetida")
             )
-            card.clicked.connect(self.edit)
+            card.edit_requested.connect(self.edit)
+            card.clicked.connect(self.abrir_detalhes)
             card.status_changed.connect(self.sync)
+            card.date_changed.connect(self.update_mission_date)
 
             main_window = self.window()
             if hasattr(main_window, 'set_focus_mission'):
@@ -401,6 +421,24 @@ class MissionScreen(QtWidgets.QWidget):
                 render(m, "Concluída")
 
         self.status_footer.setVisible(not (active or late or done))
+
+    def update_mission_date(self, m_id, new_date):
+        """Atualiza a data da missão no arquivo e recarrega a interface."""
+        data = load_missions()
+        for m in data["missions"]:
+            if m["id"] == m_id:
+                m["prazo"] = new_date
+                # Se estava atrasada, ao adiar ela volta a ficar pendente
+                if m["status"] == "Atrasada":
+                    m["status"] = "Pendente"
+                
+                # Atualiza a aba (tipo) caso a nova data mude a categoria (ex: de diária para semanal)
+                m["tipo"] = self.get_type_by_date(datetime.date.fromisoformat(new_date))
+                break
+                
+        save_missions_to_file(data)
+        self.mission_completed.emit() 
+        self.load_all()
 
     def create_mission(self):
         title = self.input_new.text().strip()
@@ -466,9 +504,72 @@ class MissionScreen(QtWidgets.QWidget):
 
         return base_xp
 
+    def show_level_up_popup(self, level):
+        self.level_dialog = QtWidgets.QDialog(self)
+        dialog = self.level_dialog
+        dialog.setWindowFlags(QtCore.Qt.FramelessWindowHint | QtCore.Qt.Dialog)
+        dialog.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+
+        layout = QtWidgets.QVBoxLayout(dialog)
+        layout.setContentsMargins(30, 30, 30, 30)
+
+        container = QtWidgets.QFrame()
+        container.setStyleSheet("""
+            QFrame {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+                                            stop:0 #7B2FF7, stop:1 #5E12F8);
+                border-radius: 20px;
+            }
+        """)
+        inner = QtWidgets.QVBoxLayout(container)
+        inner.setAlignment(QtCore.Qt.AlignCenter)
+
+        title = QtWidgets.QLabel("LEVEL UP!")
+        title.setStyleSheet("font-size: 28px; font-weight: bold; color: white;")
+        
+        lvl = QtWidgets.QLabel(f"Nível {level}")
+        lvl.setStyleSheet("font-size: 22px; color: white;")
+
+        subtitle = QtWidgets.QLabel("Continua, Maria, você é forte.")
+        subtitle.setStyleSheet("font-size: 14px; color: rgba(255,255,255,0.8);")
+
+        inner.addWidget(title)
+        inner.addWidget(lvl)
+        inner.addWidget(subtitle)
+
+        layout.addWidget(container)
+
+        dialog.resize(300, 200)
+
+        # centralizar
+        geo = self.window().geometry()
+        dialog.move(
+            geo.center() - dialog.rect().center()
+        )
+
+        # animação fade in
+        effect = QtWidgets.QGraphicsOpacityEffect(dialog)
+        dialog.setGraphicsEffect(effect)
+
+        self.level_anim = QtCore.QPropertyAnimation(effect, b"opacity")
+        self.level_anim.setDuration(400)
+        self.level_anim.setStartValue(0)
+        self.level_anim.setEndValue(1)
+        self.level_anim.start()
+
+        dialog.setModal(False)
+        dialog.setWindowModality(QtCore.Qt.NonModal)
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+        QtCore.QTimer.singleShot(2000, dialog.accept)
+    
     def sync(self, card):
         data = load_missions()
         user_data = load_user()  
+        leveled_up = False
+        level_to_show = None
 
         for m in data["missions"]:
             if m["id"] == card.mission_id:
@@ -478,7 +579,14 @@ class MissionScreen(QtWidgets.QWidget):
                         self.finished_mission_sound.play()
 
                         gained_xp = self.calculate_xp(m)
+                        old_level = user_data["usuario"]["nivel"]
+
                         user_data = add_xp_to_user(user_data, gained_xp)
+
+                        new_level = user_data["usuario"]["nivel"]
+
+                        leveled_up = new_level > old_level
+                        level_to_show = new_level
 
                         categoria = m.get("categoria")
                         if categoria:
@@ -523,6 +631,15 @@ class MissionScreen(QtWidgets.QWidget):
         self.mission_completed.emit()
         self.load_all()
 
+        if leveled_up:
+            QtCore.QTimer.singleShot(200, lambda: self.show_level_up_popup(level_to_show))
+
+    # Dentro da MissionScreen, na função que cria os cards:
+    def add_mission_card(self, missao):
+        card = MissionCard(missao['id'], missao['titulo'], ...)
+        
+        # Ao clicar no card, ele avisa a tela, que avisa a Main
+        card.clicked.connect(lambda c: self.mission_clicked.emit(missao))
 
     def edit(self, card):
         data = load_missions()

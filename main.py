@@ -14,7 +14,9 @@ from screens.name_screen import NameScreen
 from screens.config_screen import ConfigScreen 
 from data_manager import load_user
 from progression import xp_needed_for_level, get_rank
-
+from widgets.detail_mission_modal import DetailsMissionModal
+from widgets.edit_modal import EditMissionModal
+from data_manager import load_missions
 
 DEV_MODE = True
 
@@ -362,6 +364,7 @@ class MainWindow(QtWidgets.QWidget):
         self.screen_missions.mission_completed.connect(
             self.screen_home.refresh
         )
+        self.screen_missions.mission_clicked.connect(self.abrir_detalhes_missao)
         self.screen_planner = PlannerScreen(self)
         self.screen_focus = FocusScreen(self)
         self.screen_focus.foco_finalizado.connect(self.screen_home.refresh)
@@ -405,6 +408,36 @@ class MainWindow(QtWidgets.QWidget):
         self.tray.activated.connect(self.tray_clicked)
 
         self.tray.show()
+
+    def abrir_detalhes_missao(self, mission_data):
+        # Cria o modal de detalhes
+        detalhes = DetailsMissionModal(mission_data, self)
+        
+        # Se o usuário clicar no botão "EDITAR MISSÃO" dentro dos detalhes:
+        detalhes.edit_requested.connect(lambda: self.abrir_editor_missao(mission_data))
+        
+        detalhes.exec()
+    
+    def abrir_editor_missao(self, mission_data):
+        editor = EditMissionModal(mission_data, self)
+        
+        # Conecta os sinais do editor para atualizar a interface
+        editor.accepted.connect(self.salvar_e_atualizar)
+        editor.deleted.connect(self.excluir_e_atualizar)
+        
+        editor.exec()
+
+    def salvar_e_atualizar(self, novo_data):
+        # Aqui você chamaria sua função de salvar no data_manager
+        # e depois daria um refresh nas telas
+        self.screen_missions.load_all()
+        self.screen_home.refresh()
+        self.screen_planner.load_all()
+    
+    def excluir_e_atualizar(self, mission_id):
+        # Lógica de exclusão e refresh
+        self.screen_missions.load_all()
+        self.screen_home.refresh()
 
     def change(self, i):
         target_index = i + 1
@@ -489,6 +522,23 @@ def add_to_startup():
     winreg.SetValueEx(key, "LevelUp", 0, winreg.REG_SZ, exe)
     winreg.CloseKey(key)
 
+def remove_from_startup():
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Microsoft\Windows\CurrentVersion\Run",
+            0,
+            winreg.KEY_SET_VALUE
+        )
+        winreg.DeleteValue(key, "LevelUp")
+        winreg.CloseKey(key)
+        print("Removido da inicialização com sucesso.")
+    except FileNotFoundError:
+        # A chave já não existia, não precisa fazer nada
+        pass
+    except Exception as e:
+        print(f"Erro ao remover da inicialização: {e}")
+        
 if __name__ == "__main__":
     try: ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("mytasks.app")
     except: pass

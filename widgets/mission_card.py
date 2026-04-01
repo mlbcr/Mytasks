@@ -1,10 +1,13 @@
 from PySide6 import QtCore, QtWidgets, QtGui
-from data_manager import load_config
+from widgets.detail_mission_modal import DetailsMissionModal
+from data_manager import load_config, incrementar_conclusao_missao
 
 class MissionCard(QtWidgets.QFrame):
     status_changed = QtCore.Signal(object)
     clicked = QtCore.Signal(object)
+    edit_requested = QtCore.Signal(object)
     associate_requested = QtCore.Signal(int)
+    date_changed = QtCore.Signal(int, str)
 
     def __init__(self, mission_id, titulo, status="Pendente", xp=10, descricao=None, categoria=None, prazo=None, repetida=None):
         super().__init__()
@@ -91,6 +94,27 @@ class MissionCard(QtWidgets.QFrame):
         right_container.addWidget(self.xp_label)
         right_container.addWidget(self.label_prazo)
 
+        # --- Botão Adiar (Novo) ---
+        self.btn_defer = QtWidgets.QPushButton("󰔟") # Ou use "→" se não tiver suporte a ícones
+        self.btn_defer.setToolTip("Adiar para amanhã")
+        self.btn_defer.setFixedSize(24, 24)
+        self.btn_defer.setCursor(QtCore.Qt.PointingHandCursor)
+        self.btn_defer.setStyleSheet(f"""
+            QPushButton {{
+                border: none; 
+                color: {self.sub_color}; 
+                font-size: 16px; 
+                background: transparent;
+            }}
+            QPushButton:hover {{
+                color: #f1c40f;
+            }}
+        """)
+        self.btn_defer.clicked.connect(self.defer_to_tomorrow)
+
+        # --- Menu ---
+        self.btn_menu = QtWidgets.QPushButton("⋮")
+
         # --- Menu ---
         self.btn_menu = QtWidgets.QPushButton("⋮")
         self.btn_menu.setFixedSize(24, 24)
@@ -102,7 +126,7 @@ class MissionCard(QtWidgets.QFrame):
         layout.addLayout(text_container, 1)
         layout.addLayout(right_container)
         layout.addWidget(self.btn_menu)
-
+        layout.addWidget(self.btn_defer) 
         self.update_categoria(self.categoria)
         self.update_prazo(self.prazo)
         self.update_visuals()
@@ -198,9 +222,13 @@ class MissionCard(QtWidgets.QFrame):
         self.update_visuals()
         self.status_changed.emit(self)
 
+    def ao_mudar_status(self, card):
+        if card.is_done: # Se o usuário marcou como feito
+            incrementar_conclusao_missao(card.mission_id)
+
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.LeftButton and not self.btn_status.underMouse() and not self.btn_menu.underMouse():
-            self.clicked.emit(self)
+            self.edit_requested.emit(self)
 
     def open_menu(self):
         menu = QtWidgets.QMenu(self)
@@ -208,9 +236,31 @@ class MissionCard(QtWidgets.QFrame):
         menu.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         menu.setStyleSheet("QMenu { background-color: #1e1b2e; color: white; border: 1px solid #322f50; border-radius: 8px; padding: 5px; } QMenu::item:selected { background-color: #5E12F8; border-radius: 4px; }")
         
+        action_details = menu.addAction("Ver Detalhes")
         action_associate = menu.addAction("Associar ao Foco")
         action_edit = menu.addAction("Editar Missão")
         
         action = menu.exec(QtGui.QCursor.pos())
-        if action == action_associate: self.associate_requested.emit(self.mission_id)
-        elif action == action_edit: self.clicked.emit(self)
+        
+        if action == action_details: 
+            self.clicked.emit(self) 
+        elif action == action_associate: 
+            self.associate_requested.emit(self.mission_id)
+        elif action == action_edit: 
+            self.edit_requested.emit(self)
+
+    def open_edit_directly(self):
+        # Sinal customizado caso queira pular os detalhes via menu
+        if hasattr(self, 'edit_requested'):
+            self.edit_requested.emit(self)
+
+    def defer_to_tomorrow(self):
+        tomorrow = QtCore.QDate.currentDate().addDays(1)
+        tomorrow_iso = tomorrow.toString("yyyy-MM-dd")
+        
+        self.prazo = tomorrow_iso
+        self.is_late = False 
+        self.update_prazo(tomorrow_iso)
+        self.update_visuals()
+        
+        self.date_changed.emit(self.mission_id, tomorrow_iso)

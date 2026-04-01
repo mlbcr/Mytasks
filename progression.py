@@ -10,7 +10,15 @@ def add_xp_to_user(user_data, amount):
     while user["xp"] >= xp_needed_for_level(user["nivel"]):
         user["xp"] -= xp_needed_for_level(user["nivel"])
         user["nivel"] += 1
-        user["pontos_disponiveis"] += 1  
+        user["pontos_disponiveis"] += 1
+
+    while user["xp"] < 0 and user["nivel"] > 1:
+        user["nivel"] -= 1
+        user["xp"] += xp_needed_for_level(user["nivel"])
+        user["pontos_disponiveis"] = max(0, user["pontos_disponiveis"] - 1)
+
+    if user["xp"] < 0:
+        user["xp"] = 0
 
     return user_data
 

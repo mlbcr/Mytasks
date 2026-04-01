@@ -63,6 +63,15 @@ DEFAULT_CONFIG = {
   }
 }
 
+def incrementar_conclusao_missao(mission_id):
+    data = load_missions()
+    for mission in data.get("missions", []):
+        if mission.get("id") == mission_id:
+            # Se a chave não existir, ele começa em 1, se existir, soma +1
+            mission["completada_count"] = mission.get("completada_count", 0) + 1
+            break
+    save_missions_to_file(data)
+
 def load_config():
     if not os.path.exists(CONFIG_PATH):
         save_config(DEFAULT_CONFIG)
